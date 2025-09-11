@@ -518,7 +518,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                   {/* Topic Selection */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-black mb-3">
-                      Topic (optional)
+                      Topic (Optional)
                     </label>
                     {topicsLoading ? (
                       <div className="flex items-center justify-center p-8 border border-gray-200 rounded-lg">
@@ -526,101 +526,49 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                         <span className="ml-2 text-gray-600">Loading topics...</span>
                       </div>
                     ) : (
-                      <div className="space-y-2">
-                        {/* None Option */}
-                        <div 
-                          onClick={() => handleTopicChange('')}
-                          className={`relative cursor-pointer rounded-lg p-4 transition-all duration-200 border-2 ${
-                            !formData.topicId 
-                              ? 'border-blue-500 bg-blue-50 shadow-md' 
-                              : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                          }`}
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="flex-shrink-0">
-                              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </div>
-                            </div>
-                            <div className="flex-1">
-                              <div className={`text-base font-medium ${
-                                !formData.topicId ? 'text-blue-900' : 'text-gray-900'
-                              }`}>
-                                No Topic
-                              </div>
-                              <div className={`text-sm ${
-                                !formData.topicId ? 'text-blue-600' : 'text-gray-500'
-                              }`}>
-                                Post without categorization
-                              </div>
-                            </div>
+                      <div className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50">
+                        <div className="space-y-1">
+                          {/* Default "Select a topic" option */}
+                          <div
+                            onClick={() => handleTopicChange('')}
+                            className={`px-3 py-2 rounded cursor-pointer transition-colors ${
+                              !formData.topicId
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-700 hover:bg-blue-100'
+                            }`}
+                          >
+                            Select a topic (optional)
                           </div>
-                          {!formData.topicId && (
-                            <div className="absolute top-3 right-3">
-                              <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Topic Options */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          
+                          {/* Topic options */}
                           {topics.map((topic) => (
-                            <div 
+                            <div
                               key={topic._id?.toString()}
                               onClick={() => handleTopicChange(topic._id?.toString() || '')}
-                              className={`relative cursor-pointer rounded-lg p-4 transition-all duration-200 border-2 ${
-                                formData.topicId === topic._id?.toString() 
-                                  ? 'border-blue-500 bg-blue-50 shadow-md' 
-                                  : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                              className={`px-3 py-2 rounded cursor-pointer transition-colors flex items-center ${
+                                formData.topicId === topic._id?.toString()
+                                  ? 'bg-blue-600 text-white'
+                                  : 'text-gray-700 hover:bg-blue-100'
                               }`}
                             >
-                              <div className="flex items-center space-x-3">
-                                <div className="flex-shrink-0">
-                                  <div 
-                                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-                                    style={{ backgroundColor: topic.color || '#6B7280' }}
-                                  >
-                                    {topic.icon || '📁'}
-                                  </div>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className={`text-base font-medium truncate ${
-                                    formData.topicId === topic._id?.toString() ? 'text-blue-900' : 'text-gray-900'
-                                  }`}>
-                                    {topic.name}
-                                  </div>
-                                  {topic.description && (
-                                    <div className={`text-sm truncate ${
-                                      formData.topicId === topic._id?.toString() ? 'text-blue-600' : 'text-gray-500'
-                                    }`}>
-                                      {topic.description}
-                                    </div>
-                                  )}
-                                  <div className={`text-xs mt-1 ${
-                                    formData.topicId === topic._id?.toString() ? 'text-blue-500' : 'text-gray-400'
-                                  }`}>
-                                    {topic.subTopicsCount || 0} subtopics
-                                  </div>
-                                </div>
-                              </div>
-                              {formData.topicId === topic._id?.toString() && (
-                                <div className="absolute top-3 right-3">
-                                  <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
+                              <span className="mr-2">{topic.icon || '📁'}</span>
+                              <span>{topic.name}</span>
+                              {topic.subTopicsCount && topic.subTopicsCount > 0 && (
+                                <span className={`ml-auto text-xs ${
+                                  formData.topicId === topic._id?.toString()
+                                    ? 'text-blue-200'
+                                    : 'text-gray-500'
+                                }`}>
+                                  {topic.subTopicsCount} subtopics
+                                </span>
                               )}
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
-                    <p className="text-sm text-gray-600 mt-3">
-                      Choose a topic to categorize your post. This helps organize your content and improves navigation.
+                    <p className="text-sm text-gray-600 mt-2">
+                      Choose a topic to categorize your post
                     </p>
                   </div>
 
@@ -628,7 +576,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                   {formData.topicId && (
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-black mb-3">
-                        SubTopic (optional)
+                        Sub Topic (Optional)
                       </label>
                       {subtopicsLoading ? (
                         <div className="flex items-center justify-center p-8 border border-gray-200 rounded-lg">
@@ -636,103 +584,46 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                           <span className="ml-2 text-gray-600">Loading subtopics...</span>
                         </div>
                       ) : (
-                        <div className="space-y-2">
-                          {/* None Option */}
-                          <div 
-                            onClick={() => handleSubTopicChange('')}
-                            className={`relative cursor-pointer rounded-lg p-4 transition-all duration-200 border-2 ${
-                              !formData.subTopicId 
-                                ? 'border-green-500 bg-green-50 shadow-md' 
-                                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                            }`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="flex-shrink-0">
-                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </div>
-                              </div>
-                              <div className="flex-1">
-                                <div className={`text-base font-medium ${
-                                  !formData.subTopicId ? 'text-green-900' : 'text-gray-900'
-                                }`}>
-                                  No SubTopic
-                                </div>
-                                <div className={`text-sm ${
-                                  !formData.subTopicId ? 'text-green-600' : 'text-gray-500'
-                                }`}>
-                                  Only assign to main topic
-                                </div>
-                              </div>
+                        <div className="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
+                          <div className="space-y-1">
+                            {/* Default "Select a sub topic" option */}
+                            <div
+                              onClick={() => handleSubTopicChange('')}
+                              className={`px-3 py-2 rounded cursor-pointer transition-colors ${
+                                !formData.subTopicId
+                                  ? 'bg-gray-600 text-white'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              Select a sub topic (optional)
                             </div>
-                            {!formData.subTopicId && (
-                              <div className="absolute top-3 right-3">
-                                <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
+                            
+                            {/* SubTopic options */}
+                            {subtopics.length > 0 ? (
+                              subtopics.map((subtopic) => (
+                                <div
+                                  key={subtopic._id?.toString()}
+                                  onClick={() => handleSubTopicChange(subtopic._id?.toString() || '')}
+                                  className={`px-3 py-2 rounded cursor-pointer transition-colors flex items-center ${
+                                    formData.subTopicId === subtopic._id?.toString()
+                                      ? 'bg-gray-600 text-white'
+                                      : 'text-gray-700 hover:bg-gray-100'
+                                  }`}
+                                >
+                                  <span className="mr-2">{subtopic.icon || '📄'}</span>
+                                  <span>{subtopic.name}</span>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="px-3 py-2 text-gray-500 italic">
+                                No subtopics available for this topic
                               </div>
                             )}
                           </div>
-
-                          {/* SubTopic Options */}
-                          {subtopics.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              {subtopics.map((subtopic) => (
-                                <div 
-                                  key={subtopic._id?.toString()}
-                                  onClick={() => handleSubTopicChange(subtopic._id?.toString() || '')}
-                                  className={`relative cursor-pointer rounded-lg p-4 transition-all duration-200 border-2 ${
-                                    formData.subTopicId === subtopic._id?.toString() 
-                                      ? 'border-green-500 bg-green-50 shadow-md' 
-                                      : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
-                                  }`}
-                                >
-                                  <div className="flex items-center space-x-3">
-                                    <div className="flex-shrink-0">
-                                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-sm font-medium">
-                                        {subtopic.icon || '📄'}
-                                      </div>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className={`text-base font-medium truncate ${
-                                        formData.subTopicId === subtopic._id?.toString() ? 'text-green-900' : 'text-gray-900'
-                                      }`}>
-                                        {subtopic.name}
-                                      </div>
-                                      {subtopic.description && (
-                                        <div className={`text-sm truncate ${
-                                          formData.subTopicId === subtopic._id?.toString() ? 'text-green-600' : 'text-gray-500'
-                                        }`}>
-                                          {subtopic.description}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  {formData.subTopicId === subtopic._id?.toString() && (
-                                    <div className="absolute top-3 right-3">
-                                      <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                      </svg>
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                              <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <p className="text-gray-600 text-sm">No subtopics available for this topic</p>
-                              <p className="text-gray-500 text-xs mt-1">The post will only be assigned to the main topic</p>
-                            </div>
-                          )}
                         </div>
                       )}
-                      <p className="text-sm text-gray-600 mt-3">
-                        Choose a subtopic for more specific categorization within the selected topic.
+                      <p className="text-sm text-gray-600 mt-2">
+                        Choose a subtopic for more specific categorization
                       </p>
                     </div>
                   )}
