@@ -1,5 +1,43 @@
 import { ObjectId } from 'mongodb';
 
+/**
+ * BlogPost Model with Topic/SubTopic Relationships
+ * 
+ * This model establishes relationships between blog posts and the topic/subtopic system:
+ * - A blog post can be assigned to a Topic (topicId)
+ * - A blog post can optionally be assigned to a SubTopic (subTopicId)
+ * - If assigned to a SubTopic, it must also have a Topic
+ * - Provides helper functions for validation and data manipulation
+ */
+
+// Extended interface for populated blog posts with topic/subtopic data
+export interface BlogPostWithTopics extends BlogPost {
+  topic?: {
+    _id: ObjectId;
+    name: string;
+    slug: string;
+    icon?: string;
+    color?: string;
+  };
+  subTopic?: {
+    _id: ObjectId;
+    name: string;
+    slug: string;
+    icon?: string;
+  };
+}
+
+// Filter interface for querying posts by topics
+export interface BlogPostFilter {
+  topicId?: ObjectId | string;
+  subTopicId?: ObjectId | string;
+  language?: 'English' | 'Vietnamese';
+  published?: boolean;
+  tags?: string[];
+  author?: string;
+  search?: string; // For searching in title/content/excerpt
+}
+
 export interface BlogPost {
   _id?: ObjectId;
   title: string;
@@ -11,6 +49,8 @@ export interface BlogPost {
   image?: string; // Featured image URL/path (e.g., /images/blog/post-hero.jpg)
   language: 'English' | 'Vietnamese'; // Post language
   published: boolean;
+  topicId?: ObjectId; // Reference to Topic
+  subTopicId?: ObjectId; // Reference to SubTopic (optional, can be null if only topic is assigned)
   createdAt: Date;
   updatedAt: Date;
   publishedAt?: Date;
@@ -49,4 +89,55 @@ export function extractExcerpt(content: string, maxLength: number = 160): string
   }
   
   return plainText.substring(0, maxLength).replace(/\s+\S*$/, '') + '...';
+}
+
+// Helper function to validate topic/subtopic relationship
+export function validateTopicRelationship(topicId?: ObjectId, subTopicId?: ObjectId): boolean {
+  // If subtopic is provided, topic must also be provided
+  if (subTopicId && !topicId) {
+    return false;
+  }
+  return true;
+}
+
+// Helper function to create a blog post with topic validation
+export function createBlogPostData(data: Partial<BlogPost>): Omit<BlogPost, '_id' | 'createdAt' | 'updatedAt'> {
+  const now = new Date();
+  
+  // Validate topic relationship
+  if (!validateTopicRelationship(data.topicId, data.subTopicId)) {
+    throw new Error('SubTopic cannot be assigned without a Topic');
+  }
+  
+  return {
+    title: data.title || '',
+    slug: data.slug || generateSlug(data.title || ''),
+    content: data.content || '',
+    excerpt: data.excerpt || extractExcerpt(data.content || ''),
+    author: data.author || '',
+    tags: data.tags || [],
+    image: data.image,
+    language: data.language || 'English',
+    published: data.published || false,
+    topicId: data.topicId,
+    subTopicId: data.subTopicId,
+    publishedAt: data.published ? now : undefined,
+    readTime: data.readTime || calculateReadTime(data.content || ''),
+    views: data.views || 0,
+  };
+}
+
+// Helper function to get topic breadcrumb for a blog post
+export function getTopicBreadcrumb(post: BlogPostWithTopics): string[] {
+  const breadcrumb: string[] = [];
+  
+  if (post.topic) {
+    breadcrumb.push(post.topic.name);
+  }
+  
+  if (post.subTopic) {
+    breadcrumb.push(post.subTopic.name);
+  }
+  
+  return breadcrumb;
 }

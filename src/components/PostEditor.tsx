@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ObjectId } from 'mongodb';
 import CustomMDEditor from '@/components/MDEditor';
 import { BlogPost } from '@/models';
+import { useTopics } from '@/hooks/useTopics';
 
 interface PostEditorProps {
   mode: 'create' | 'edit';
@@ -20,6 +22,8 @@ interface FormData {
   image: string;
   language: 'English' | 'Vietnamese';
   published: boolean;
+  topicId?: string;
+  subTopicId?: string;
 }
 
 export default function PostEditor({ mode, postId }: PostEditorProps) {
@@ -27,6 +31,15 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(mode === 'edit');
   const [post, setPost] = useState<BlogPost | null>(null);
+  const { 
+    topics, 
+    selectedTopic, 
+    subtopics, 
+    loading: topicsLoading, 
+    subtopicsLoading,
+    refreshTopics,
+    setSelectedTopic 
+  } = useTopics();
   const [formData, setFormData] = useState<FormData>({
     title: '',
     slug: '',
@@ -36,6 +49,8 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
     image: '',
     language: 'English',
     published: false,
+    topicId: '',
+    subTopicId: '',
   });
 
   // Function to generate slug from title
@@ -59,6 +74,25 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
     }));
   };
 
+  // Handle topic selection
+  const handleTopicChange = (topicId: string) => {
+    const topic = topics.find(t => t._id?.toString() === topicId);
+    setSelectedTopic(topic || null);
+    setFormData(prev => ({
+      ...prev,
+      topicId: topicId,
+      subTopicId: '', // Reset subtopic when topic changes
+    }));
+  };
+
+  // Handle subtopic selection
+  const handleSubTopicChange = (subTopicId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      subTopicId: subTopicId,
+    }));
+  };
+
   const fetchPost = useCallback(async () => {
     if (mode === 'create' || !postId) return;
     
@@ -76,7 +110,17 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
           image: postData.image || '',
           language: postData.language || 'English',
           published: postData.published,
+          topicId: postData.topicId?.toString() || '',
+          subTopicId: postData.subTopicId?.toString() || '',
         });
+        
+        // Set selected topic if post has one
+        if (postData.topicId) {
+          const topic = topics.find(t => t._id?.toString() === postData.topicId?.toString());
+          if (topic) {
+            setSelectedTopic(topic);
+          }
+        }
       } else {
         router.push('/admin');
       }
@@ -86,7 +130,12 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
     } finally {
       setFetchLoading(false);
     }
-  }, [mode, postId, router]);
+  }, [mode, postId, router, topics, setSelectedTopic]);
+
+  useEffect(() => {
+    // Load topics when component mounts
+    refreshTopics();
+  }, [refreshTopics]);
 
   useEffect(() => {
     if (mode === 'edit') {
@@ -108,6 +157,8 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
         image: formData.image.trim() || undefined,
         language: formData.language,
         published: formData.published,
+        topicId: formData.topicId || undefined,
+        subTopicId: formData.subTopicId || undefined,
       };
 
       const url = mode === 'create' ? '/api/posts' : `/api/posts/${postId}`;
@@ -464,6 +515,72 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                     </p>
                   </div>
 
+                  {/* Topic Selection */}
+                  <div>
+                    <label htmlFor="topic" className="block text-sm font-medium text-black mb-2">
+                      Topic
+                    </label>
+                    <div className="relative">
+                      <svg className="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      <select
+                        id="topic"
+                        value={formData.topicId || ''}
+                        onChange={(e) => handleTopicChange(e.target.value)}
+                        disabled={topicsLoading}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black appearance-none bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Select a topic (optional)</option>
+                        {topics.map((topic) => (
+                          <option key={topic._id?.toString()} value={topic._id?.toString()}>
+                            {topic.icon && `${topic.icon} `}{topic.name}
+                          </option>
+                        ))}
+                      </select>
+                      <svg className="absolute right-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Choose a topic to categorize your post
+                    </p>
+                  </div>
+
+                  {/* SubTopic Selection - Only show if topic is selected */}
+                  {formData.topicId && (
+                    <div>
+                      <label htmlFor="subtopic" className="block text-sm font-medium text-black mb-2">
+                        SubTopic
+                      </label>
+                      <div className="relative">
+                        <svg className="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <select
+                          id="subtopic"
+                          value={formData.subTopicId || ''}
+                          onChange={(e) => handleSubTopicChange(e.target.value)}
+                          disabled={subtopicsLoading}
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black appearance-none bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <option value="">Select a subtopic (optional)</option>
+                          {subtopics.map((subtopic) => (
+                            <option key={subtopic._id?.toString()} value={subtopic._id?.toString()}>
+                              {subtopic.icon && `${subtopic.icon} `}{subtopic.name}
+                            </option>
+                          ))}
+                        </select>
+                        <svg className="absolute right-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Choose a subtopic for more specific categorization
+                      </p>
+                    </div>
+                  )}
+
                   {/* Language */}
                   <div>
                     <label className="block text-sm font-medium text-black mb-3">
@@ -664,30 +781,66 @@ Add your content sections here...`}
 
             {/* Writing Tips for Create Mode */}
             {mode === 'create' && (
-              <div className="bg-blue-50 rounded-xl border border-blue-200 p-6">
-                <h3 className="text-lg font-semibold text-blue-900 mb-4">✨ Writing Tips</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
-                  <div>
-                    <h4 className="font-medium mb-2">Markdown Support:</h4>
-                    <ul className="space-y-1">
-                      <li>• Use <code className="bg-blue-100 px-1 rounded">**bold**</code> and <code className="bg-blue-100 px-1 rounded">*italic*</code> for emphasis</li>
-                      <li>• Create headers with <code className="bg-blue-100 px-1 rounded"># ## ###</code></li>
-                      <li>• Add images with <code className="bg-blue-100 px-1 rounded">![Alt text](/images/blog/image.jpg)</code></li>
-                      <li>• Add code with <code className="bg-blue-100 px-1 rounded">`backticks`</code> or <code className="bg-blue-100 px-1 rounded">```blocks```</code></li>
-                      <li>• Create lists with <code className="bg-blue-100 px-1 rounded">-</code> or <code className="bg-blue-100 px-1 rounded">1.</code></li>
-                    </ul>
+              <>
+                {/* Topic Breadcrumb for Create Mode */}
+                {(formData.topicId || formData.subTopicId) && (
+                  <div className="bg-green-50 rounded-xl border border-green-200 p-6">
+                    <h3 className="text-lg font-semibold text-green-900 mb-4">📂 Post Category</h3>
+                    <div className="flex items-center space-x-2 text-green-800">
+                      {formData.topicId && (
+                        <>
+                          <div className="flex items-center space-x-2">
+                            <div className={`w-3 h-3 rounded-full`} style={{
+                              backgroundColor: topics.find(t => t._id?.toString() === formData.topicId)?.color || '#10B981'
+                            }}></div>
+                            <span className="font-medium">
+                              {topics.find(t => t._id?.toString() === formData.topicId)?.icon} {topics.find(t => t._id?.toString() === formData.topicId)?.name}
+                            </span>
+                          </div>
+                          {formData.subTopicId && (
+                            <>
+                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                              <span className="font-medium">
+                                {subtopics.find(s => s._id?.toString() === formData.subTopicId)?.icon} {subtopics.find(s => s._id?.toString() === formData.subTopicId)?.name}
+                              </span>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <p className="text-sm text-green-700 mt-2">
+                      Your post will be categorized under this topic{formData.subTopicId ? ' and subtopic' : ''}.
+                    </p>
                   </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Math Support (KaTeX):</h4>
-                    <ul className="space-y-1">
-                      <li>• Inline math: <code className="bg-blue-100 px-1 rounded">$x = y + z$</code></li>
-                      <li>• Block math: <code className="bg-blue-100 px-1 rounded">$$\\int_0^1 x dx$$</code></li>
-                      <li>• Supports LaTeX syntax</li>
-                      <li>• Great for technical posts!</li>
-                    </ul>
+                )}
+
+                <div className="bg-blue-50 rounded-xl border border-blue-200 p-6">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-4">✨ Writing Tips</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                    <div>
+                      <h4 className="font-medium mb-2">Markdown Support:</h4>
+                      <ul className="space-y-1">
+                        <li>• Use <code className="bg-blue-100 px-1 rounded">**bold**</code> and <code className="bg-blue-100 px-1 rounded">*italic*</code> for emphasis</li>
+                        <li>• Create headers with <code className="bg-blue-100 px-1 rounded"># ## ###</code></li>
+                        <li>• Add images with <code className="bg-blue-100 px-1 rounded">![Alt text](/images/blog/image.jpg)</code></li>
+                        <li>• Add code with <code className="bg-blue-100 px-1 rounded">`backticks`</code> or <code className="bg-blue-100 px-1 rounded">```blocks```</code></li>
+                        <li>• Create lists with <code className="bg-blue-100 px-1 rounded">-</code> or <code className="bg-blue-100 px-1 rounded">1.</code></li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Math Support (KaTeX):</h4>
+                      <ul className="space-y-1">
+                        <li>• Inline math: <code className="bg-blue-100 px-1 rounded">$x = y + z$</code></li>
+                        <li>• Block math: <code className="bg-blue-100 px-1 rounded">$$\\int_0^1 x dx$$</code></li>
+                        <li>• Supports LaTeX syntax</li>
+                        <li>• Great for technical posts!</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
@@ -695,6 +848,41 @@ Add your content sections here...`}
           {mode === 'edit' && post && (
             <div className="lg:col-span-1">
               <div className="sticky top-8 space-y-6">
+                {/* Topic/SubTopic Info */}
+                {(formData.topicId || formData.subTopicId) && (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Category</h3>
+                    <div className="space-y-3">
+                      {formData.topicId && (
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full ${
+                            topics.find(t => t._id?.toString() === formData.topicId)?.color || 'bg-gray-400'
+                          }`} style={{
+                            backgroundColor: topics.find(t => t._id?.toString() === formData.topicId)?.color || '#9CA3AF'
+                          }}></div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {topics.find(t => t._id?.toString() === formData.topicId)?.icon} {topics.find(t => t._id?.toString() === formData.topicId)?.name}
+                            </div>
+                            <div className="text-xs text-gray-500">Topic</div>
+                          </div>
+                        </div>
+                      )}
+                      {formData.subTopicId && (
+                        <div className="flex items-center space-x-3 ml-6">
+                          <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-700">
+                              {subtopics.find(s => s._id?.toString() === formData.subTopicId)?.icon} {subtopics.find(s => s._id?.toString() === formData.subTopicId)?.name}
+                            </div>
+                            <div className="text-xs text-gray-500">SubTopic</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Post Statistics */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Post Statistics</h3>
