@@ -28,6 +28,7 @@ export interface UseTopics {
   selectedTopic: TopicWithCount | null;
   subtopics: SubTopic[];
   loading: boolean;
+  subtopicsLoading: boolean;
   showTopicForm: boolean;
   showSubTopicForm: boolean;
   editingTopic: TopicWithCount | null;
@@ -58,6 +59,7 @@ export function useTopics(): UseTopics {
   const [selectedTopic, setSelectedTopicState] = useState<TopicWithCount | null>(null);
   const [subtopics, setSubtopics] = useState<SubTopic[]>([]);
   const [loading, setLoading] = useState(false);
+  const [subtopicsLoading, setSubtopicsLoading] = useState(false);
   
   // Form states
   const [showTopicForm, setShowTopicForm] = useState(false);
@@ -90,19 +92,29 @@ export function useTopics(): UseTopics {
       if (response.ok) {
         const data = await response.json();
         setTopics(data);
-        if (data.length > 0 && !selectedTopic) {
-          setSelectedTopicState(data[0]);
-        }
       }
     } catch (error) {
       console.error('Error fetching topics:', error);
     } finally {
       setLoading(false);
     }
-  }, [selectedTopic]);
+  }, []);
+
+  // Load topics on mount and set first topic as selected if none is selected
+  useEffect(() => {
+    refreshTopics();
+  }, [refreshTopics]);
+
+  // Auto-select first topic when topics are loaded and no topic is selected
+  useEffect(() => {
+    if (topics.length > 0 && !selectedTopic) {
+      setSelectedTopicState(topics[0]);
+    }
+  }, [topics, selectedTopic]);
 
   // Fetch subtopics when topic changes
   const fetchSubTopics = useCallback(async (topicId: string) => {
+    setSubtopicsLoading(true);
     try {
       const response = await fetch(`/api/topics/${topicId}/subtopics`);
       if (response.ok) {
@@ -111,22 +123,29 @@ export function useTopics(): UseTopics {
       }
     } catch (error) {
       console.error('Error fetching subtopics:', error);
+    } finally {
+      setSubtopicsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (selectedTopic?._id) {
       fetchSubTopics(selectedTopic._id.toString());
+    } else {
+      setSubtopics([]);
     }
   }, [selectedTopic, fetchSubTopics]);
 
   // Set selected topic
-  const setSelectedTopic = (topic: TopicWithCount | null) => {
-    setSelectedTopicState(topic);
-  };
+  const setSelectedTopic = useCallback((topic: TopicWithCount | null) => {
+    // Only update if the topic is actually different
+    if (topic?._id?.toString() !== selectedTopic?._id?.toString()) {
+      setSelectedTopicState(topic);
+    }
+  }, [selectedTopic]);
 
   // Topic CRUD operations
-  const createTopic = async (data: TopicFormData) => {
+  const createTopic = useCallback(async (data: TopicFormData) => {
     try {
       const response = await fetch('/api/topics', {
         method: 'POST',
@@ -136,16 +155,16 @@ export function useTopics(): UseTopics {
 
       if (response.ok) {
         const newTopic = await response.json();
-        setTopics([...topics, { ...newTopic, subTopicsCount: 0 }]);
+        setTopics(prev => [...prev, { ...newTopic, subTopicsCount: 0 }]);
         closeForms();
       }
     } catch (error) {
       console.error('Error creating topic:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const updateTopic = async (data: TopicFormData) => {
+  const updateTopic = useCallback(async (data: TopicFormData) => {
     if (!editingTopic) return;
 
     try {
@@ -157,7 +176,7 @@ export function useTopics(): UseTopics {
 
       if (response.ok) {
         const updatedTopic = await response.json();
-        setTopics(topics.map(t => 
+        setTopics(prev => prev.map(t => 
           t._id?.toString() === editingTopic._id?.toString() 
             ? { ...updatedTopic, subTopicsCount: t.subTopicsCount }
             : t
@@ -173,9 +192,9 @@ export function useTopics(): UseTopics {
       console.error('Error updating topic:', error);
       throw error;
     }
-  };
+  }, [editingTopic, selectedTopic]);
 
-  const deleteTopic = async (topic: TopicWithCount) => {
+  const deleteTopic = useCallback(async (topic: TopicWithCount) => {
     if (!ErrorHandler.confirmAction(`Are you sure you want to delete "${topic.name}"? This will also delete all its subtopics.`)) {
       return;
     }
@@ -189,16 +208,16 @@ export function useTopics(): UseTopics {
         throw new Error('Failed to delete topic');
       }
 
-      setTopics(topics.filter(t => t._id?.toString() !== topic._id?.toString()));
+      setTopics(prev => prev.filter(t => t._id?.toString() !== topic._id?.toString()));
       if (selectedTopic?._id?.toString() === topic._id?.toString()) {
-        setSelectedTopicState(topics.length > 1 ? topics[0] : null);
+        setSelectedTopicState(null);
       }
       ErrorHandler.showSuccess('Topic deleted successfully');
     }, 'Failed to delete topic');
-  };
+  }, [selectedTopic]);
 
   // SubTopic CRUD operations
-  const createSubTopic = async (data: SubTopicFormData) => {
+  const createSubTopic = useCallback(async (data: SubTopicFormData) => {
     if (!selectedTopic) return;
 
     try {
@@ -210,8 +229,8 @@ export function useTopics(): UseTopics {
 
       if (response.ok) {
         const newSubTopic = await response.json();
-        setSubtopics([...subtopics, newSubTopic]);
-        setTopics(topics.map(t => 
+        setSubtopics(prev => [...prev, newSubTopic]);
+        setTopics(prev => prev.map(t => 
           t._id?.toString() === selectedTopic._id?.toString()
             ? { ...t, subTopicsCount: t.subTopicsCount + 1 }
             : t
@@ -222,9 +241,9 @@ export function useTopics(): UseTopics {
       console.error('Error creating subtopic:', error);
       throw error;
     }
-  };
+  }, [selectedTopic]);
 
-  const updateSubTopic = async (data: SubTopicFormData) => {
+  const updateSubTopic = useCallback(async (data: SubTopicFormData) => {
     if (!editingSubTopic) return;
 
     try {
@@ -236,7 +255,7 @@ export function useTopics(): UseTopics {
 
       if (response.ok) {
         const updatedSubTopic = await response.json();
-        setSubtopics(subtopics.map(st => 
+        setSubtopics(prev => prev.map(st => 
           st._id?.toString() === editingSubTopic._id?.toString() ? updatedSubTopic : st
         ));
         closeForms();
@@ -245,9 +264,9 @@ export function useTopics(): UseTopics {
       console.error('Error updating subtopic:', error);
       throw error;
     }
-  };
+  }, [editingSubTopic]);
 
-  const deleteSubTopic = async (subtopic: SubTopic) => {
+  const deleteSubTopic = useCallback(async (subtopic: SubTopic) => {
     if (!confirm(`Are you sure you want to delete "${subtopic.name}"?`)) {
       return;
     }
@@ -258,9 +277,9 @@ export function useTopics(): UseTopics {
       });
 
       if (response.ok) {
-        setSubtopics(subtopics.filter(st => st._id?.toString() !== subtopic._id?.toString()));
+        setSubtopics(prev => prev.filter(st => st._id?.toString() !== subtopic._id?.toString()));
         if (selectedTopic) {
-          setTopics(topics.map(t => 
+          setTopics(prev => prev.map(t => 
             t._id?.toString() === selectedTopic._id?.toString()
               ? { ...t, subTopicsCount: t.subTopicsCount - 1 }
               : t
@@ -271,10 +290,10 @@ export function useTopics(): UseTopics {
       console.error('Error deleting subtopic:', error);
       throw error;
     }
-  };
+  }, [selectedTopic]);
 
   // Form management
-  const openTopicForm = (topic?: TopicWithCount) => {
+  const openTopicForm = useCallback((topic?: TopicWithCount) => {
     if (topic) {
       setEditingTopic(topic);
       setTopicFormData({
@@ -297,9 +316,9 @@ export function useTopics(): UseTopics {
       });
     }
     setShowTopicForm(true);
-  };
+  }, [topics.length]);
 
-  const openSubTopicForm = (subtopic?: SubTopic) => {
+  const openSubTopicForm = useCallback((subtopic?: SubTopic) => {
     if (subtopic) {
       setEditingSubTopic(subtopic);
       setSubTopicFormData({
@@ -320,9 +339,9 @@ export function useTopics(): UseTopics {
       });
     }
     setShowSubTopicForm(true);
-  };
+  }, [subtopics.length]);
 
-  const closeForms = () => {
+  const closeForms = useCallback(() => {
     setShowTopicForm(false);
     setShowSubTopicForm(false);
     setEditingTopic(null);
@@ -342,21 +361,22 @@ export function useTopics(): UseTopics {
       isActive: true,
       order: subtopics.length,
     });
-  };
+  }, [topics.length, subtopics.length]);
 
-  const updateTopicForm = (data: Partial<TopicFormData>) => {
+  const updateTopicForm = useCallback((data: Partial<TopicFormData>) => {
     setTopicFormData(prev => ({ ...prev, ...data }));
-  };
+  }, []);
 
-  const updateSubTopicForm = (data: Partial<SubTopicFormData>) => {
+  const updateSubTopicForm = useCallback((data: Partial<SubTopicFormData>) => {
     setSubTopicFormData(prev => ({ ...prev, ...data }));
-  };
+  }, []);
 
   return {
     topics,
     selectedTopic,
     subtopics,
     loading,
+    subtopicsLoading,
     showTopicForm,
     showSubTopicForm,
     editingTopic,

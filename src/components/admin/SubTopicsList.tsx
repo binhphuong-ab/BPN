@@ -8,6 +8,7 @@ interface SubTopicsListProps {
   onSubTopicDelete: (subtopic: SubTopic) => void;
   onAddSubTopic: () => void;
   hasSelectedTopic: boolean;
+  isLoading?: boolean;
 }
 
 export default function SubTopicsList({
@@ -16,7 +17,8 @@ export default function SubTopicsList({
   onSubTopicEdit,
   onSubTopicDelete,
   onAddSubTopic,
-  hasSelectedTopic
+  hasSelectedTopic,
+  isLoading = false
 }: SubTopicsListProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -35,8 +37,23 @@ export default function SubTopicsList({
       </div>
 
       {hasSelectedTopic ? (
-        <div className="space-y-3">
-          {subtopics.map((subtopic) => (
+        isLoading ? (
+          <div className="space-y-3">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="p-4 rounded-lg border border-gray-200 animate-pulse">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-200 rounded"></div>
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-24 mb-1"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {subtopics.map((subtopic) => (
             <div
               key={subtopic._id?.toString()}
               className="p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
@@ -98,7 +115,8 @@ export default function SubTopicsList({
               </button>
             </div>
           )}
-        </div>
+          </div>
+        )
       ) : (
         <div className="text-center py-8">
           <div className="text-gray-400 mb-2">

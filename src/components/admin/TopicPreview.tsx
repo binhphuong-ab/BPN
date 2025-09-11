@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Topic } from '@/models/topic';
 
 interface TopicWithCount extends Topic {
@@ -9,7 +9,7 @@ interface TopicPreviewProps {
   topic: TopicWithCount;
 }
 
-export default function TopicPreview({ topic }: TopicPreviewProps) {
+export default memo(function TopicPreview({ topic }: TopicPreviewProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <h4 className="text-lg font-semibold text-gray-900 mb-4">Topic Details</h4>
@@ -66,4 +66,4 @@ export default function TopicPreview({ topic }: TopicPreviewProps) {
       </div>
     </div>
   );
-}
+});

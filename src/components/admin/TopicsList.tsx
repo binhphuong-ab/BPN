@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Topic } from '@/models/topic';
 
 interface TopicWithCount extends Topic {
@@ -14,7 +14,7 @@ interface TopicsListProps {
   onAddTopic: () => void;
 }
 
-export default function TopicsList({
+export default memo(function TopicsList({
   topics,
   selectedTopic,
   onTopicSelect,
@@ -116,4 +116,4 @@ export default function TopicsList({
       </div>
     </div>
   );
-}
+});

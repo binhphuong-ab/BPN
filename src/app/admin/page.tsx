@@ -27,13 +27,6 @@ export default function AdminPage() {
   const postsHook = usePosts();
   const topicsHook = useTopics();
 
-  // Load data when tab changes
-  useEffect(() => {
-    if (activeTab === 'topics') {
-      topicsHook.refreshTopics();
-    }
-  }, [activeTab, topicsHook.refreshTopics]);
-
   const hasSearchOrFilters = !!(postsHook.filters.search || 
     postsHook.filters.status !== 'all' || 
     postsHook.filters.language !== 'all');
@@ -151,7 +144,7 @@ export default function AdminPage() {
             )}
 
             {activeTab === 'topics' && (
-              <div>
+              <div key="topics-tab">
                 {topicsHook.loading ? (
                   <LoadingSpinner />
                 ) : (
@@ -168,12 +161,14 @@ export default function AdminPage() {
 
                     {/* Subtopics List */}
                     <SubTopicsList
+                      key={topicsHook.selectedTopic?._id?.toString() || 'no-topic'}
                       subtopics={topicsHook.subtopics}
                       topicName={topicsHook.selectedTopic?.name}
                       onSubTopicEdit={topicsHook.openSubTopicForm}
                       onSubTopicDelete={topicsHook.deleteSubTopic}
                       onAddSubTopic={() => topicsHook.openSubTopicForm()}
                       hasSelectedTopic={!!topicsHook.selectedTopic}
+                      isLoading={topicsHook.subtopicsLoading}
                     />
 
                     {/* Forms and Preview Column */}
@@ -203,7 +198,10 @@ export default function AdminPage() {
 
                       {/* Topic Preview */}
                       {topicsHook.selectedTopic && !topicsHook.showTopicForm && !topicsHook.showSubTopicForm && (
-                        <TopicPreview topic={topicsHook.selectedTopic} />
+                        <TopicPreview 
+                          key={topicsHook.selectedTopic._id?.toString()} 
+                          topic={topicsHook.selectedTopic} 
+                        />
                       )}
                     </div>
                   </div>
