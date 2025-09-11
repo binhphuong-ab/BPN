@@ -1,0 +1,7 @@
+# Ignore all files in uploads directory except .gitkeep
+*
+!.gitkeep
+!.gitignore
+
+# This ensures temporary uploads aren't committed to git
+# Remove this file if you want to track uploads

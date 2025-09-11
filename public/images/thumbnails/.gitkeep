@@ -1,0 +1,3 @@
+# This file ensures the directory is tracked by git even when empty
+# Place your image thumbnails and previews here
+# Example: post-thumb.jpg, gallery-preview.png
