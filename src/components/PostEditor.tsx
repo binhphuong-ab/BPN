@@ -516,7 +516,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                   </div>
 
                   {/* Topic Selection */}
-                  <div className={formData.topicId ? "md:col-span-1" : "md:col-span-2"}>
+                  <div className="md:col-span-1">
                     <label className="block text-sm font-medium text-black mb-3">
                       Topic (Optional)
                     </label>
@@ -573,7 +573,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                   </div>
 
                   {/* SubTopic Selection - Only show if topic is selected */}
-                  {formData.topicId && (
+                  {formData.topicId ? (
                     <div className="md:col-span-1">
                       <label className="block text-sm font-medium text-black mb-3">
                         Sub Topic (Optional)
@@ -626,6 +626,9 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                         Choose a subtopic for more specific categorization
                       </p>
                     </div>
+                  ) : (
+                    /* Empty placeholder div to maintain grid layout */
+                    <div className="md:col-span-1"></div>
                   )}
 
                   {/* Language */}
