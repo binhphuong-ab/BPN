@@ -516,7 +516,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                   </div>
 
                   {/* Topic Selection */}
-                  <div className="md:col-span-2">
+                  <div className={formData.topicId ? "md:col-span-1" : "md:col-span-2"}>
                     <label className="block text-sm font-medium text-black mb-3">
                       Topic (Optional)
                     </label>
@@ -552,14 +552,14 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                               }`}
                             >
                               <span className="mr-2">{topic.icon || '📁'}</span>
-                              <span>{topic.name}</span>
+                              <span className="flex-1 truncate">{topic.name}</span>
                               {topic.subTopicsCount && topic.subTopicsCount > 0 && (
-                                <span className={`ml-auto text-xs ${
+                                <span className={`ml-2 text-xs flex-shrink-0 ${
                                   formData.topicId === topic._id?.toString()
                                     ? 'text-blue-200'
                                     : 'text-gray-500'
                                 }`}>
-                                  {topic.subTopicsCount} subtopics
+                                  {topic.subTopicsCount}
                                 </span>
                               )}
                             </div>
@@ -574,7 +574,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
 
                   {/* SubTopic Selection - Only show if topic is selected */}
                   {formData.topicId && (
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-1">
                       <label className="block text-sm font-medium text-black mb-3">
                         Sub Topic (Optional)
                       </label>
@@ -611,7 +611,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                                   }`}
                                 >
                                   <span className="mr-2">{subtopic.icon || '📄'}</span>
-                                  <span>{subtopic.name}</span>
+                                  <span className="flex-1 truncate">{subtopic.name}</span>
                                 </div>
                               ))
                             ) : (
