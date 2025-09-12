@@ -7,6 +7,7 @@ import Image from 'next/image';
 import CustomMDEditor from '@/components/MDEditor';
 import { BlogPost } from '@/models';
 import { useTopics } from '@/hooks/useTopics';
+import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
 
 interface PostEditorProps {
   mode: 'create' | 'edit';
@@ -53,31 +54,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
   });
   const [imageError, setImageError] = useState<string>('');
   const [imageLoading, setImageLoading] = useState<boolean>(false);
-
-  // Function to generate slug from title with Vietnamese support
-  const generateSlug = (title: string): string => {
-    return title
-      .toLowerCase()
-      // Convert Vietnamese characters to ASCII equivalents
-      .replace(/[àáạảãâầấậẩẫăằắặẳẵ]/g, 'a')
-      .replace(/[èéẹẻẽêềếệểễ]/g, 'e')
-      .replace(/[ìíịỉĩ]/g, 'i')
-      .replace(/[òóọỏõôồốộổỗơờớợởỡ]/g, 'o')
-      .replace(/[ùúụủũưừứựửữ]/g, 'u')
-      .replace(/[ỳýỵỷỹ]/g, 'y')
-      .replace(/đ/g, 'd')
-      // Remove any remaining special characters (keep only letters, numbers, spaces, hyphens)
-      .replace(/[^a-z0-9 -]/g, '')
-      // Replace multiple spaces with single space
-      .replace(/\s+/g, ' ')
-      // Replace spaces with hyphens
-      .replace(/\s/g, '-')
-      // Replace multiple hyphens with single hyphen
-      .replace(/-+/g, '-')
-      // Remove leading/trailing hyphens
-      .replace(/^-+|-+$/g, '')
-      .trim();
-  };
 
   // Function to validate image URL
   const validateImageUrl = (url: string): { isValid: boolean; error?: string } => {
@@ -128,12 +104,12 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
 
   // Auto-generate slug when title changes (only if slug is empty or auto-generated)
   const handleTitleChange = (newTitle: string) => {
-    const newSlug = generateSlug(newTitle);
+    const newSlug = generateVietnameseSlug(newTitle);
     setFormData(prev => ({
       ...prev,
       title: newTitle,
       // Only auto-update slug if it's empty or matches the previously generated slug
-      slug: prev.slug === '' || prev.slug === generateSlug(prev.title) ? newSlug : prev.slug
+      slug: prev.slug === '' || prev.slug === generateVietnameseSlug(prev.title) ? newSlug : prev.slug
     }));
   };
 
@@ -213,7 +189,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
     try {
       const postData = {
         title: formData.title,
-        slug: formData.slug || generateSlug(formData.title), // Use manual slug or generate from title
+        slug: formData.slug || generateVietnameseSlug(formData.title), // Use manual slug or generate from title
         summary: formData.summary,
         content: formData.content,
         author: formData.author,
@@ -486,7 +462,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                       />
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, slug: generateSlug(formData.title) })}
+                        onClick={() => setFormData({ ...formData, slug: generateVietnameseSlug(formData.title) })}
                         className="absolute right-2 top-2 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
                       >
                         Auto
@@ -589,9 +565,11 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                             </div>
                           )}
                           
-                          <img
+                          <Image
                             src={formData.image}
                             alt="Featured image preview"
+                            width={400}
+                            height={200}
                             className="block max-w-full max-h-48 object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.02]"
                             onLoad={() => setImageLoading(false)}
                             onError={() => {
