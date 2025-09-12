@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BlogService } from '@/lib/blog-service';
 import { MarkdownPreview } from '@/components/MDEditor';
-import { formatDistanceToNow, format } from 'date-fns';
+import { format } from 'date-fns';
 
 interface BlogPostPageProps {
   params: {
@@ -12,7 +13,7 @@ interface BlogPostPageProps {
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
-  const post = await BlogService.getPostBySlug(params.slug);
+  const post = await BlogService.getPostBySlugWithTopic(params.slug);
 
   if (!post) {
     return {
@@ -23,7 +24,6 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   return {
     title: post.title,
     description: post.summary,
-    keywords: post.tags,
     authors: [{ name: post.author }],
     openGraph: {
       title: post.title,
@@ -32,18 +32,28 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       publishedTime: post.publishedAt?.toISOString(),
       modifiedTime: post.updatedAt.toISOString(),
       authors: [post.author],
-      tags: post.tags,
+      ...(post.image && {
+        images: [
+          {
+            url: post.image,
+            alt: post.title,
+          },
+        ],
+      }),
     },
     twitter: {
       card: 'summary_large_image',
       title: post.title,
       description: post.summary,
+      ...(post.image && {
+        images: [post.image],
+      }),
     },
   };
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const post = await BlogService.getPostBySlug(params.slug);
+  const post = await BlogService.getPostBySlugWithTopic(params.slug);
 
   if (!post) {
     notFound();
@@ -54,224 +64,181 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const otherRecentPosts = recentPosts.filter(p => p.slug !== post.slug);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-white">
+      <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Breadcrumb */}
-        <nav className="mb-8" aria-label="Breadcrumb">
+        <nav className="mb-12" aria-label="Breadcrumb">
           <ol className="flex items-center space-x-2 text-sm text-gray-500">
             <li>
-              <Link href="/" className="hover:text-gray-700 transition-colors">
+              <Link href="/" className="hover:text-gray-900 transition-colors font-medium">
                 Home
               </Link>
             </li>
             <li>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
+              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </li>
             <li>
-              <Link href="/blog" className="hover:text-gray-700 transition-colors">
+              <Link href="/blog" className="hover:text-gray-900 transition-colors font-medium">
                 Blog
               </Link>
             </li>
             <li>
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
+              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </li>
-            <li className="text-gray-700 font-medium truncate">
+            <li className="text-gray-900 font-medium truncate">
               {post.title}
             </li>
           </ol>
         </nav>
 
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="prose prose-lg prose-gray max-w-none">
           {/* Header */}
-          <header className="px-6 py-8 border-b border-gray-200">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              {/* Language indicator */}
-              <span className={`inline-block text-sm px-3 py-1 rounded-full font-medium ${
-                post.language === 'Vietnamese' 
-                  ? 'bg-red-100 text-red-800' 
-                  : 'bg-green-100 text-green-800'
-              }`}>
-                {post.language === 'Vietnamese' ? '🇻🇳 Vietnamese' : '🇺🇸 English'}
-              </span>
-              
-              {post.tags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/blog?tag=${encodeURIComponent(tag)}`}
-                  className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full hover:bg-blue-200 transition-colors"
-                >
-                  {tag}
-                </Link>
-              ))}
-            </div>
-            
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <header className="not-prose mb-16 pb-8 border-b border-gray-200">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8 leading-tight">
               {post.title}
             </h1>
             
-            <div className="flex flex-wrap items-center text-sm text-gray-600 space-x-6">
-              <div className="flex items-center space-x-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                <span>{post.author}</span>
+            <div className="flex flex-wrap items-center gap-4 mb-8 text-sm text-gray-600">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-base font-bold shadow-lg">
+                  {post.author.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-gray-900 text-base">{post.author}</span>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <time className="font-medium">
+                      {format(new Date(post.publishedAt || post.createdAt), 'MMMM d, yyyy')}
+                    </time>
+                    {post.readTime && (
+                      <>
+                        <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {post.readTime} min read
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
               
-              <div className="flex items-center space-x-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <span>
-                  {format(new Date(post.publishedAt || post.createdAt), 'MMMM d, yyyy')}
+              {/* Pills inline with author section */}
+              <div className="flex items-center gap-2 ml-auto">
+                {/* Topic indicator */}
+                {('topic' in post && post.topic) && (
+                  <span 
+                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium border"
+                    style={{
+                      backgroundColor: post.topic.color ? `${post.topic.color}15` : '#F3F4F6',
+                      borderColor: post.topic.color ? `${post.topic.color}40` : '#D1D5DB',
+                      color: post.topic.color || '#374151'
+                    }}
+                  >
+                    <span className="text-sm">{post.topic.icon || '📁'}</span>
+                    <span>{post.topic.name}</span>
+                  </span>
+                )}
+                
+                {/* Subtopic indicator */}
+                {('subTopic' in post && post.subTopic) && (
+                  <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    <span className="text-sm">{post.subTopic.icon || '📄'}</span>
+                    <span>{post.subTopic.name}</span>
+                  </span>
+                )}
+                
+                {/* Language indicator */}
+                <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium border ${
+                  post.language === 'Vietnamese' 
+                    ? 'bg-red-50 text-red-700 border-red-200' 
+                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                }`}>
+                  <span className="text-sm">{post.language === 'Vietnamese' ? '🇻🇳' : '🇺🇸'}</span>
+                  <span>{post.language === 'Vietnamese' ? 'VI' : 'EN'}</span>
                 </span>
               </div>
-              
-              {post.readTime && (
-                <div className="flex items-center space-x-2">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <span>{post.readTime} min read</span>
-                </div>
-              )}
-              
-              {post.views && post.views > 0 && (
-                <div className="flex items-center space-x-2">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                    />
-                  </svg>
-                  <span>{post.views} views</span>
-                </div>
-              )}
             </div>
           </header>
 
+          {/* Feature Image */}
+          {post.image && (
+            <div className="mb-12">
+              <div className="relative w-full h-96 rounded-lg overflow-hidden shadow-lg">
+                <Image
+                  src={post.image}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Content */}
-          <div className="px-6 py-8">
+          <div className="prose-content">
             <MarkdownPreview 
               content={post.content} 
-              className="prose-headings:text-gray-900 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-code:text-pink-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-gray-900 prose-pre:text-gray-100"
+              className="prose-headings:text-gray-900 prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-code:text-pink-600 prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-lg prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:italic"
             />
           </div>
-
-          {/* Footer */}
-          <footer className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-gray-600">
-                Last updated: {formatDistanceToNow(new Date(post.updatedAt), { addSuffix: true })}
-              </p>
-              
-              {/* Share buttons could go here */}
-            </div>
-          </footer>
         </div>
       </article>
 
       {/* Sidebar with recent posts */}
       {otherRecentPosts.length > 0 && (
-        <aside className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Recent Posts</h3>
-            <div className="space-y-4">
+        <aside className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+          <div className="border-t border-gray-200 pt-12">
+            <h3 className="text-xl font-bold text-gray-900 mb-8">More from this blog</h3>
+            <div className="space-y-8">
               {otherRecentPosts.slice(0, 3).map((recentPost) => (
                 <Link
                   key={recentPost._id?.toString()}
                   href={`/blog/${recentPost.slug}`}
-                  className="block group"
+                  className="block group hover:bg-gray-50 rounded-lg p-4 -m-4 transition-colors"
                 >
-                  <div className="flex space-x-3">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
-                        {recentPost.title}
-                      </h4>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {formatDistanceToNow(new Date(recentPost.publishedAt || recentPost.createdAt), {
-                          addSuffix: true,
-                        })}
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 leading-snug">
+                      {recentPost.title}
+                    </h4>
+                    {recentPost.summary && (
+                      <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
+                        {recentPost.summary}
                       </p>
+                    )}
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <time>
+                        {format(new Date(recentPost.publishedAt || recentPost.createdAt), 'MMM d, yyyy')}
+                      </time>
+                      {recentPost.readTime && (
+                        <>
+                          <span>•</span>
+                          <span>{recentPost.readTime} min read</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
             
-            <div className="mt-6">
+            <div className="mt-8 pt-6 border-t border-gray-100">
               <Link
                 href="/blog"
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
               >
-                View all posts →
+                <span>View all posts</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
               </Link>
             </div>
           </div>

@@ -19,7 +19,6 @@ interface FormData {
   summary: string;
   content: string;
   author: string;
-  tags: string;
   image: string;
   language: 'English' | 'Vietnamese';
   published: boolean;
@@ -46,7 +45,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
     summary: '',
     content: '',
     author: 'Binh Phuong Nguyen',
-    tags: '',
     image: '',
     language: 'English',
     published: false,
@@ -123,7 +121,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
           summary: postData.summary || '',
           content: postData.content,
           author: postData.author,
-          tags: postData.tags.join(', '),
           image: postData.image || '',
           language: postData.language || 'English',
           published: postData.published,
@@ -171,7 +168,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
         summary: formData.summary,
         content: formData.content,
         author: formData.author,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
         image: formData.image.trim() || undefined,
         language: formData.language,
         published: formData.published,
@@ -510,29 +506,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                         placeholder="Author name"
                       />
                     </div>
-                  </div>
-
-                  {/* Tags */}
-                  <div>
-                    <label htmlFor="tags" className="block text-sm font-medium text-black mb-2">
-                      Tags
-                    </label>
-                    <div className="relative">
-                      <svg className="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
-                      <input
-                        type="text"
-                        id="tags"
-                        value={formData.tags}
-                        onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black"
-                        placeholder="javascript, react, tutorial"
-                      />
-                    </div>
-                    <p className="text-sm text-black mt-1">
-                      Separate multiple tags with commas
-                    </p>
                   </div>
 
                   {/* Topic Selection */}

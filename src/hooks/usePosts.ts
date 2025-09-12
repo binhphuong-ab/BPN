@@ -72,8 +72,7 @@ export function usePosts(): UsePosts {
     if (filters.search) {
       filtered = filtered.filter(post => 
         post.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-        post.content.toLowerCase().includes(filters.search.toLowerCase()) ||
-        post.tags.some(tag => tag.toLowerCase().includes(filters.search.toLowerCase()))
+        post.content.toLowerCase().includes(filters.search.toLowerCase())
       );
     }
 

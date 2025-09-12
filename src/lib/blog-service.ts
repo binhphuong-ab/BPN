@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from './mongodb';
-import { BlogPost, generateSlug, calculateReadTime, extractSummary } from '@/models';
+import { BlogPost, BlogPostWithTopics, generateSlug, calculateReadTime, extractSummary } from '@/models';
 
 export class BlogService {
   private static async getCollection() {
@@ -82,6 +82,73 @@ export class BlogService {
     return await collection.findOne({ _id: new ObjectId(id) });
   }
 
+  // Get a single blog post by slug with populated topic information
+  static async getPostBySlugWithTopic(slug: string): Promise<BlogPostWithTopics | null> {
+    const db = await getDatabase();
+    const collection = db.collection<BlogPost>('posts');
+    
+    // Aggregation pipeline to get post with populated topic
+    const pipeline = [
+      { $match: { slug, published: true } },
+      {
+        $addFields: {
+          topicObjectId: {
+            $cond: {
+              if: { $ne: ['$topicId', null] },
+              then: { $toObjectId: '$topicId' },
+              else: null
+            }
+          },
+          subTopicObjectId: {
+            $cond: {
+              if: { $ne: ['$subTopicId', null] },
+              then: { $toObjectId: '$subTopicId' },
+              else: null
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'topics',
+          localField: 'topicObjectId',
+          foreignField: '_id',
+          as: 'topic'
+        }
+      },
+      {
+        $lookup: {
+          from: 'subtopics',
+          localField: 'subTopicObjectId',
+          foreignField: '_id',
+          as: 'subTopic'
+        }
+      },
+      {
+        $addFields: {
+          topic: { $arrayElemAt: ['$topic', 0] },
+          subTopic: { $arrayElemAt: ['$subTopic', 0] }
+        }
+      },
+      {
+        $unset: ['topicObjectId', 'subTopicObjectId']
+      }
+    ];
+
+    const [post] = await collection.aggregate<BlogPostWithTopics>(pipeline).toArray();
+    
+    // Increment view count
+    if (post) {
+      await collection.updateOne(
+        { _id: post._id },
+        { $inc: { views: 1 } }
+      );
+      post.views = (post.views || 0) + 1;
+    }
+    
+    return post || null;
+  }
+
   // Get a single blog post by slug
   static async getPostBySlug(slug: string): Promise<BlogPost | null> {
     const collection = await this.getCollection();
@@ -99,19 +166,85 @@ export class BlogService {
     return post;
   }
 
+  // Get published posts with populated topic information
+  static async getPublishedPostsWithTopics(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ posts: BlogPostWithTopics[]; total: number; hasMore: boolean }> {
+    const db = await getDatabase();
+    const collection = db.collection<BlogPost>('posts');
+    const skip = (page - 1) * limit;
+
+    // Build match filter
+    const matchFilter: Record<string, unknown> = { published: true };
+
+    // Aggregation pipeline to populate topic information
+    const pipeline = [
+      { $match: matchFilter },
+      { $sort: { publishedAt: -1 } },
+      {
+        $addFields: {
+          topicObjectId: {
+            $cond: {
+              if: { $ne: ['$topicId', null] },
+              then: { $toObjectId: '$topicId' },
+              else: null
+            }
+          },
+          subTopicObjectId: {
+            $cond: {
+              if: { $ne: ['$subTopicId', null] },
+              then: { $toObjectId: '$subTopicId' },
+              else: null
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'topics',
+          localField: 'topicObjectId',
+          foreignField: '_id',
+          as: 'topic'
+        }
+      },
+      {
+        $lookup: {
+          from: 'subtopics',
+          localField: 'subTopicObjectId',
+          foreignField: '_id',
+          as: 'subTopic'
+        }
+      },
+      {
+        $addFields: {
+          topic: { $arrayElemAt: ['$topic', 0] },
+          subTopic: { $arrayElemAt: ['$subTopic', 0] }
+        }
+      },
+      {
+        $unset: ['topicObjectId', 'subTopicObjectId']
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    const posts = await collection.aggregate<BlogPostWithTopics>(pipeline).toArray();
+    const total = await collection.countDocuments(matchFilter);
+    const hasMore = skip + posts.length < total;
+
+    return { posts, total, hasMore };
+  }
+
   // Get all published blog posts with pagination
   static async getPublishedPosts(
     page: number = 1,
-    limit: number = 10,
-    tag?: string
+    limit: number = 10
   ): Promise<{ posts: BlogPost[]; total: number; hasMore: boolean }> {
     const collection = await this.getCollection();
     const skip = (page - 1) * limit;
     
-    const filter: { published: boolean; tags?: { $in: string[] } } = { published: true };
-    if (tag) {
-      filter.tags = { $in: [tag] };
-    }
+    const filter = { published: true };
 
     const posts = await collection
       .find(filter)
@@ -147,6 +280,82 @@ export class BlogService {
     return { posts, total, hasMore };
   }
 
+  // Search posts by title or content with populated topic information
+  static async searchPostsWithTopics(
+    query: string,
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ posts: BlogPostWithTopics[]; total: number; hasMore: boolean }> {
+    const db = await getDatabase();
+    const collection = db.collection<BlogPost>('posts');
+    const skip = (page - 1) * limit;
+
+    const searchFilter = {
+      published: true,
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { content: { $regex: query, $options: 'i' } }
+      ]
+    };
+
+    // Aggregation pipeline to populate topic information
+    const pipeline = [
+      { $match: searchFilter },
+      { $sort: { publishedAt: -1 } },
+      {
+        $addFields: {
+          topicObjectId: {
+            $cond: {
+              if: { $ne: ['$topicId', null] },
+              then: { $toObjectId: '$topicId' },
+              else: null
+            }
+          },
+          subTopicObjectId: {
+            $cond: {
+              if: { $ne: ['$subTopicId', null] },
+              then: { $toObjectId: '$subTopicId' },
+              else: null
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: 'topics',
+          localField: 'topicObjectId',
+          foreignField: '_id',
+          as: 'topic'
+        }
+      },
+      {
+        $lookup: {
+          from: 'subtopics',
+          localField: 'subTopicObjectId',
+          foreignField: '_id',
+          as: 'subTopic'
+        }
+      },
+      {
+        $addFields: {
+          topic: { $arrayElemAt: ['$topic', 0] },
+          subTopic: { $arrayElemAt: ['$subTopic', 0] }
+        }
+      },
+      {
+        $unset: ['topicObjectId', 'subTopicObjectId']
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    const posts = await collection.aggregate<BlogPostWithTopics>(pipeline).toArray();
+    const total = await collection.countDocuments(searchFilter);
+    const hasMore = skip + posts.length < total;
+
+    return { posts, total, hasMore };
+  }
+
   // Search posts by title or content
   static async searchPosts(
     query: string,
@@ -160,8 +369,7 @@ export class BlogService {
       published: true,
       $or: [
         { title: { $regex: query, $options: 'i' } },
-        { content: { $regex: query, $options: 'i' } },
-        { tags: { $regex: query, $options: 'i' } }
+        { content: { $regex: query, $options: 'i' } }
       ]
     };
 
@@ -176,13 +384,6 @@ export class BlogService {
     const hasMore = skip + posts.length < total;
 
     return { posts, total, hasMore };
-  }
-
-  // Get all unique tags
-  static async getTags(): Promise<string[]> {
-    const collection = await this.getCollection();
-    const tags = await collection.distinct('tags', { published: true });
-    return tags.sort();
   }
 
   // Get recent posts

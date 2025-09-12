@@ -33,7 +33,6 @@ export interface BlogPostFilter {
   subTopicId?: ObjectId | string;
   language?: 'English' | 'Vietnamese';
   published?: boolean;
-  tags?: string[];
   author?: string;
   search?: string; // For searching in title/content/summary
 }
@@ -45,7 +44,6 @@ export interface BlogPost {
   content: string;
   summary: string;
   author: string;
-  tags: string[];
   image?: string; // Featured image URL/path (e.g., /images/blog/post-hero.jpg)
   language: 'English' | 'Vietnamese'; // Post language
   published: boolean;
@@ -115,7 +113,6 @@ export function createBlogPostData(data: Partial<BlogPost>): Omit<BlogPost, '_id
     content: data.content || '',
     summary: data.summary || extractSummary(data.content || ''),
     author: data.author || '',
-    tags: data.tags || [],
     image: data.image,
     language: data.language || 'English',
     published: data.published || false,

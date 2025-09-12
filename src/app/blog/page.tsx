@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import BlogCard from '@/components/BlogCard';
-import { BlogPost } from '@/models';
+import { BlogPostWithTopics } from '@/models';
 
 interface BlogData {
-  posts: BlogPost[];
+  posts: BlogPostWithTopics[];
   total: number;
   hasMore: boolean;
 }
@@ -15,23 +14,7 @@ function BlogContent() {
   const [blogs, setBlogs] = useState<BlogData>({ posts: [], total: 0, hasMore: false });
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [tags, setTags] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const searchParams = useSearchParams();
-
-  const selectedTag = searchParams.get('tag');
-
-  const fetchTags = async () => {
-    try {
-      const response = await fetch('/api/tags');
-      if (response.ok) {
-        const fetchedTags = await response.json();
-        setTags(fetchedTags);
-      }
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-    }
-  };
 
   const fetchPosts = useCallback(async (pageNum: number, reset = false) => {
     setLoading(true);
@@ -40,10 +23,6 @@ function BlogContent() {
         page: pageNum.toString(),
         limit: '9',
       });
-
-      if (selectedTag) {
-        params.append('tag', selectedTag);
-      }
 
       if (searchQuery) {
         params.append('search', searchQuery);
@@ -69,15 +48,11 @@ function BlogContent() {
     } finally {
       setLoading(false);
     }
-  }, [selectedTag, searchQuery]);
-
-  useEffect(() => {
-    fetchTags();
-  }, []);
+  }, [searchQuery]);
 
   useEffect(() => {
     fetchPosts(1, true);
-  }, [selectedTag, searchQuery, fetchPosts]);
+  }, [searchQuery, fetchPosts]);
 
   const loadMore = () => {
     if (blogs.hasMore && !loading) {
@@ -131,43 +106,13 @@ function BlogContent() {
             </div>
           </form>
 
-          {/* Tags */}
-          {tags.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-2">
-              <a
-                href="/blog"
-                className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                  !selectedTag
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                All
-              </a>
-              {tags.map((tag) => (
-                <a
-                  key={tag}
-                  href={`/blog?tag=${encodeURIComponent(tag)}`}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    selectedTag === tag
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {tag}
-                </a>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Results info */}
-        {(selectedTag || searchQuery) && (
+        {searchQuery && (
           <div className="mb-6 text-center">
             <p className="text-gray-600">
-              {selectedTag && `Showing posts tagged with "${selectedTag}"`}
-              {selectedTag && searchQuery && ' and '}
-              {searchQuery && `matching "${searchQuery}"`}
+              {`Showing posts matching "${searchQuery}"`}
               {` • ${blogs.total} result${blogs.total !== 1 ? 's' : ''} found`}
             </p>
           </div>
@@ -228,11 +173,11 @@ function BlogContent() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No posts found</h3>
             <p className="text-gray-500 mb-6">
-              {selectedTag || searchQuery
-                ? 'Try adjusting your search or filter criteria.'
+              {searchQuery
+                ? 'Try adjusting your search criteria.'
                 : 'No blog posts have been published yet.'}
             </p>
-            {!selectedTag && !searchQuery && (
+            {!searchQuery && (
               <a
                 href="/admin"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"

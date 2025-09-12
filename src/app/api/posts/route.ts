@@ -8,14 +8,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
-    const tag = searchParams.get('tag') || undefined;
     const search = searchParams.get('search');
 
     let result;
     if (search) {
-      result = await BlogService.searchPosts(search, page, limit);
+      result = await BlogService.searchPostsWithTopics(search, page, limit);
     } else {
-      result = await BlogService.getPublishedPosts(page, limit, tag);
+      result = await BlogService.getPublishedPostsWithTopics(page, limit);
     }
 
     return NextResponse.json(result);
