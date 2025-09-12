@@ -51,6 +51,8 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
     topicId: '',
     subTopicId: '',
   });
+  const [imageError, setImageError] = useState<string>('');
+  const [imageLoading, setImageLoading] = useState<boolean>(false);
 
   // Function to generate slug from title with Vietnamese support
   const generateSlug = (title: string): string => {
@@ -75,6 +77,53 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
       // Remove leading/trailing hyphens
       .replace(/^-+|-+$/g, '')
       .trim();
+  };
+
+  // Function to validate image URL
+  const validateImageUrl = (url: string): { isValid: boolean; error?: string } => {
+    if (!url.trim()) {
+      return { isValid: true }; // Empty URL is valid (optional field)
+    }
+
+    const trimmedUrl = url.trim();
+
+    // Check for common image extensions
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)(\?.*)?$/i;
+    if (!imageExtensions.test(trimmedUrl)) {
+      return { isValid: false, error: 'Please use an image file (.jpg, .png, .gif, .webp, .svg)' };
+    }
+
+    // Handle different URL types
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      try {
+        new URL(trimmedUrl);
+        return { isValid: true };
+      } catch {
+        return { isValid: false, error: 'Invalid URL format' };
+      }
+    }
+
+    return { isValid: true }; // Allow all relative and absolute paths
+  };
+
+  // Function to handle image URL changes with validation
+  const handleImageChange = (newImageUrl: string) => {
+    setFormData({ ...formData, image: newImageUrl });
+    setImageError('');
+    
+    if (newImageUrl.trim()) {
+      const validation = validateImageUrl(newImageUrl);
+      
+      if (!validation.isValid) {
+        setImageError(validation.error || 'Invalid image URL');
+        setImageLoading(false);
+        return;
+      }
+      
+      setImageLoading(true);
+    } else {
+      setImageLoading(false);
+    }
   };
 
   // Auto-generate slug when title changes (only if slug is empty or auto-generated)
@@ -418,7 +467,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                   </div>
 
                   {/* Slug */}
-                  <div className="md:col-span-2">
+                  <div>
                     <label htmlFor="slug" className="block text-sm font-medium text-black mb-2">
                       URL Slug *
                     </label>
@@ -448,45 +497,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                     </p>
                   </div>
 
-                  {/* Featured Image */}
-                  <div className="md:col-span-2">
-                    <label htmlFor="image" className="block text-sm font-medium text-black mb-2">
-                      Featured Image
-                    </label>
-                    <div className="relative">
-                      <svg className="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <input
-                        type="text"
-                        id="image"
-                        value={formData.image}
-                        onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black"
-                        placeholder="/images/blog/my-post-hero.jpg"
-                      />
-                    </div>
-                    <p className="text-sm text-black mt-1">
-                      Optional. Use paths like: /images/blog/hero-image.jpg
-                    </p>
-                    {formData.image && (
-                      <div className="mt-3">
-                        <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                        <div className="relative w-full h-32">
-                          <Image 
-                            src={formData.image} 
-                            alt="Featured image preview" 
-                            fill
-                            className="object-cover rounded-lg border border-gray-200"
-                            onError={() => {
-                              // Handle error silently or show placeholder
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
                   {/* Author */}
                   <div>
                     <label htmlFor="author" className="block text-sm font-medium text-black mb-2">
@@ -506,6 +516,105 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                         placeholder="Author name"
                       />
                     </div>
+                  </div>
+
+                  {/* Featured Image */}
+                  <div className="md:col-span-2">
+                    <label htmlFor="image" className="block text-sm font-medium text-black mb-2">
+                      Featured Image
+                    </label>
+                    <div className="relative">
+                      <svg className="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <input
+                        type="text"
+                        id="image"
+                        value={formData.image}
+                        onChange={(e) => handleImageChange(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black"
+                        placeholder="/images/blog/Strategy.jpg"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Optional. Supports relative paths (/images/blog/hero.jpg) or full URLs (https://...)
+                    </p>
+                    
+                    {/* Error message */}
+                    {imageError && (
+                      <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div className="flex items-start space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center">
+                              <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-800">{imageError}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Image preview */}
+                    {formData.image && !imageError && (
+                      <div className="mt-6">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                            <span className="text-sm font-medium text-gray-800">Preview</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, image: '' });
+                              setImageError('');
+                              setImageLoading(false);
+                            }}
+                            className="text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-full transition-all duration-200 border border-transparent hover:border-red-200"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        
+                        <div className="relative inline-block max-w-full group">
+                          {imageLoading && (
+                            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                                <span className="text-xs text-gray-600 font-medium">Loading...</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          <img
+                            src={formData.image}
+                            alt="Featured image preview"
+                            className="block max-w-full max-h-48 object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.02]"
+                            onLoad={() => setImageLoading(false)}
+                            onError={() => {
+                              setImageLoading(false);
+                              setImageError('Failed to load image. Please check the URL.');
+                            }}
+                          />
+                          
+                          {/* Subtle overlay on hover */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 rounded-lg"></div>
+                        </div>
+                        
+                        <div className="mt-3 flex items-center justify-between">
+                          <p className="text-xs text-gray-500 truncate flex-1 mr-4">{formData.image}</p>
+                          <div className="flex items-center text-xs text-gray-400">
+                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Ready
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Topic Selection */}
