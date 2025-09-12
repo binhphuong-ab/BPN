@@ -117,7 +117,7 @@ export default memo(function PostsTable({
                   <div className="max-w-xs">
                     <div className="text-sm font-semibold text-gray-900 truncate">{post.title}</div>
                     <div className="text-sm text-gray-600 truncate mt-1">
-                      {post.excerpt || 'No excerpt available'}
+                      {post.summary || 'No summary available'}
                     </div>
                     {/* Show language on mobile */}
                     <div className="sm:hidden mt-2">

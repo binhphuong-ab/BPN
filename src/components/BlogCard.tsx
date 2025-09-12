@@ -5,13 +5,13 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface BlogCardProps {
   post: BlogPost;
-  showExcerpt?: boolean;
+  showSummary?: boolean;
   className?: string;
 }
 
 export default function BlogCard({ 
   post, 
-  showExcerpt = true, 
+  showSummary = true, 
   className = '' 
 }: BlogCardProps) {
   return (
@@ -66,9 +66,13 @@ export default function BlogCard({
           </h2>
         </Link>
 
-        {showExcerpt && post.excerpt && (
-          <p className="text-gray-600 mb-4 line-clamp-3">
-            {post.excerpt}
+        {showSummary && post.summary && (
+          <p className="text-gray-600 mb-4 overflow-hidden" style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical' as const
+          }}>
+            {post.summary}
           </p>
         )}
 

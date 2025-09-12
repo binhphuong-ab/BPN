@@ -35,7 +35,7 @@ export interface BlogPostFilter {
   published?: boolean;
   tags?: string[];
   author?: string;
-  search?: string; // For searching in title/content/excerpt
+  search?: string; // For searching in title/content/summary
 }
 
 export interface BlogPost {
@@ -43,7 +43,7 @@ export interface BlogPost {
   title: string;
   slug: string;
   content: string;
-  excerpt: string;
+  summary: string;
   author: string;
   tags: string[];
   image?: string; // Featured image URL/path (e.g., /images/blog/post-hero.jpg)
@@ -75,9 +75,9 @@ export function calculateReadTime(content: string): number {
   return Math.ceil(wordCount / wordsPerMinute);
 }
 
-// Helper function to extract excerpt from content
-export function extractExcerpt(content: string, maxLength: number = 160): string {
-  // Remove markdown syntax for excerpt
+// Helper function to extract summary from content
+export function extractSummary(content: string, maxLength: number = 160): string {
+  // Remove markdown syntax for summary
   const plainText = content
     .replace(/[#*_`~]/g, '') // Remove markdown formatting
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert links to plain text
@@ -113,7 +113,7 @@ export function createBlogPostData(data: Partial<BlogPost>): Omit<BlogPost, '_id
     title: data.title || '',
     slug: data.slug || generateSlug(data.title || ''),
     content: data.content || '',
-    excerpt: data.excerpt || extractExcerpt(data.content || ''),
+    summary: data.summary || extractSummary(data.content || ''),
     author: data.author || '',
     tags: data.tags || [],
     image: data.image,

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ObjectId } from 'mongodb';
+import Image from 'next/image';
 import CustomMDEditor from '@/components/MDEditor';
 import { BlogPost } from '@/models';
 import { useTopics } from '@/hooks/useTopics';
@@ -16,6 +16,7 @@ interface PostEditorProps {
 interface FormData {
   title: string;
   slug: string;
+  summary: string;
   content: string;
   author: string;
   tags: string;
@@ -33,7 +34,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
   const [post, setPost] = useState<BlogPost | null>(null);
   const { 
     topics, 
-    selectedTopic, 
     subtopics, 
     loading: topicsLoading, 
     subtopicsLoading,
@@ -43,6 +43,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
   const [formData, setFormData] = useState<FormData>({
     title: '',
     slug: '',
+    summary: '',
     content: '',
     author: 'Binh Phuong Nguyen',
     tags: '',
@@ -55,24 +56,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
 
   // Function to generate slug from title with Vietnamese support
   const generateSlug = (title: string): string => {
-    // Vietnamese character mapping to ASCII equivalents
-    const vietnameseMap: { [key: string]: string } = {
-      'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a', 'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ậ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ặ': 'a', 'ẳ': 'a', 'ẵ': 'a',
-      'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ê': 'e', 'ề': 'e', 'ế': 'e', 'ệ': 'e', 'ể': 'e', 'ễ': 'e',
-      'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
-      'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o', 'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ộ': 'o', 'ổ': 'o', 'ỗ': 'o', 'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ợ': 'o', 'ở': 'o', 'ỡ': 'o',
-      'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u', 'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
-      'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
-      'đ': 'd',
-      'À': 'A', 'Á': 'A', 'Ạ': 'A', 'Ả': 'A', 'Ã': 'A', 'Â': 'A', 'Ầ': 'A', 'Ấ': 'A', 'Ậ': 'A', 'Ẩ': 'A', 'Ẫ': 'A', 'Ă': 'A', 'Ằ': 'A', 'Ắ': 'A', 'Ặ': 'A', 'Ẳ': 'A', 'Ẵ': 'A',
-      'È': 'E', 'É': 'E', 'Ẹ': 'E', 'Ẻ': 'E', 'Ẽ': 'E', 'Ê': 'E', 'Ề': 'E', 'Ế': 'E', 'Ệ': 'E', 'Ể': 'E', 'Ễ': 'E',
-      'Ì': 'I', 'Í': 'I', 'Ị': 'I', 'Ỉ': 'I', 'Ĩ': 'I',
-      'Ò': 'O', 'Ó': 'O', 'Ọ': 'O', 'Ỏ': 'O', 'Õ': 'O', 'Ô': 'O', 'Ồ': 'O', 'Ố': 'O', 'Ộ': 'O', 'Ổ': 'O', 'Ỗ': 'O', 'Ơ': 'O', 'Ờ': 'O', 'Ớ': 'O', 'Ợ': 'O', 'Ở': 'O', 'Ỡ': 'O',
-      'Ù': 'U', 'Ú': 'U', 'Ụ': 'U', 'Ủ': 'U', 'Ũ': 'U', 'Ư': 'U', 'Ừ': 'U', 'Ứ': 'U', 'Ự': 'U', 'Ử': 'U', 'Ữ': 'U',
-      'Ỳ': 'Y', 'Ý': 'Y', 'Ỵ': 'Y', 'Ỷ': 'Y', 'Ỹ': 'Y',
-      'Đ': 'D'
-    };
-
     return title
       .toLowerCase()
       // Convert Vietnamese characters to ASCII equivalents
@@ -137,6 +120,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
         setFormData({
           title: postData.title,
           slug: postData.slug,
+          summary: postData.summary || '',
           content: postData.content,
           author: postData.author,
           tags: postData.tags.join(', '),
@@ -184,6 +168,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
       const postData = {
         title: formData.title,
         slug: formData.slug || generateSlug(formData.title), // Use manual slug or generate from title
+        summary: formData.summary,
         content: formData.content,
         author: formData.author,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
@@ -491,15 +476,17 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                     {formData.image && (
                       <div className="mt-3">
                         <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                        <img 
-                          src={formData.image} 
-                          alt="Featured image preview" 
-                          className="max-w-full h-32 object-cover rounded-lg border border-gray-200"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
-                        />
+                        <div className="relative w-full h-32">
+                          <Image 
+                            src={formData.image} 
+                            alt="Featured image preview" 
+                            fill
+                            className="object-cover rounded-lg border border-gray-200"
+                            onError={() => {
+                              // Handle error silently or show placeholder
+                            }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -741,6 +728,40 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                     <p className="text-sm text-gray-600 mt-3">
                       Select the primary language of your post
                     </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Post Summary Section */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center mb-6">
+                  <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                  </svg>
+                  <h2 className="text-lg font-semibold text-black">Post Summary</h2>
+                </div>
+                
+                <div>
+                  <label htmlFor="summary" className="block text-sm font-medium text-black mb-2">
+                    Summary *
+                  </label>
+                  <textarea
+                    id="summary"
+                    required
+                    value={formData.summary}
+                    onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black resize-none"
+                    placeholder="Write a compelling summary that will appear in blog previews, social media shares, and search results..."
+                    rows={4}
+                    maxLength={300}
+                  />
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-sm text-gray-600">
+                      This summary will be used for blog previews, meta descriptions, and social media shares.
+                    </p>
+                    <span className="text-sm text-gray-500">
+                      {formData.summary.length}/300
+                    </span>
                   </div>
                 </div>
               </div>

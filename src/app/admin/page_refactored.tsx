@@ -32,7 +32,7 @@ export default function AdminPage() {
     if (activeTab === 'topics') {
       topicsHook.refreshTopics();
     }
-  }, [activeTab]);
+  }, [activeTab, topicsHook]);
 
   const hasSearchOrFilters = !!(postsHook.filters.search || 
     postsHook.filters.status !== 'all' || 

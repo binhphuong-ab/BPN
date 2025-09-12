@@ -144,6 +144,29 @@ export function useTopics(): UseTopics {
     }
   }, [selectedTopic]);
 
+  // Form management - closeForms defined first to avoid circular dependencies
+  const closeForms = useCallback(() => {
+    setShowTopicForm(false);
+    setShowSubTopicForm(false);
+    setEditingTopic(null);
+    setEditingSubTopic(null);
+    setTopicFormData({
+      name: '',
+      description: '',
+      icon: '📁',
+      color: generateRandomColor(),
+      isActive: true,
+      order: topics.length,
+    });
+    setSubTopicFormData({
+      name: '',
+      description: '',
+      icon: '📄',
+      isActive: true,
+      order: subtopics.length,
+    });
+  }, [topics.length, subtopics.length]);
+
   // Topic CRUD operations
   const createTopic = useCallback(async (data: TopicFormData) => {
     try {
@@ -162,7 +185,7 @@ export function useTopics(): UseTopics {
       console.error('Error creating topic:', error);
       throw error;
     }
-  }, []);
+  }, [closeForms]);
 
   const updateTopic = useCallback(async (data: TopicFormData) => {
     if (!editingTopic) return;
@@ -192,7 +215,7 @@ export function useTopics(): UseTopics {
       console.error('Error updating topic:', error);
       throw error;
     }
-  }, [editingTopic, selectedTopic]);
+  }, [editingTopic, selectedTopic, closeForms]);
 
   const deleteTopic = useCallback(async (topic: TopicWithCount) => {
     if (!ErrorHandler.confirmAction(`Are you sure you want to delete "${topic.name}"? This will also delete all its subtopics.`)) {
@@ -241,7 +264,7 @@ export function useTopics(): UseTopics {
       console.error('Error creating subtopic:', error);
       throw error;
     }
-  }, [selectedTopic]);
+  }, [selectedTopic, closeForms]);
 
   const updateSubTopic = useCallback(async (data: SubTopicFormData) => {
     if (!editingSubTopic) return;
@@ -264,7 +287,7 @@ export function useTopics(): UseTopics {
       console.error('Error updating subtopic:', error);
       throw error;
     }
-  }, [editingSubTopic]);
+  }, [editingSubTopic, closeForms]);
 
   const deleteSubTopic = useCallback(async (subtopic: SubTopic) => {
     if (!confirm(`Are you sure you want to delete "${subtopic.name}"?`)) {
@@ -340,28 +363,6 @@ export function useTopics(): UseTopics {
     }
     setShowSubTopicForm(true);
   }, [subtopics.length]);
-
-  const closeForms = useCallback(() => {
-    setShowTopicForm(false);
-    setShowSubTopicForm(false);
-    setEditingTopic(null);
-    setEditingSubTopic(null);
-    setTopicFormData({
-      name: '',
-      description: '',
-      icon: '📁',
-      color: generateRandomColor(),
-      isActive: true,
-      order: topics.length,
-    });
-    setSubTopicFormData({
-      name: '',
-      description: '',
-      icon: '📄',
-      isActive: true,
-      order: subtopics.length,
-    });
-  }, [topics.length, subtopics.length]);
 
   const updateTopicForm = useCallback((data: Partial<TopicFormData>) => {
     setTopicFormData(prev => ({ ...prev, ...data }));

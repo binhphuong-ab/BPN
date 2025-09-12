@@ -41,6 +41,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Optional: Validate summary length if provided
+    if (postData.summary && postData.summary.length > 300) {
+      return NextResponse.json(
+        { error: 'Summary must be 300 characters or less' },
+        { status: 400 }
+      );
+    }
+
     const post = await BlogService.createPost(postData);
     return NextResponse.json(post, { status: 201 });
   } catch (error) {

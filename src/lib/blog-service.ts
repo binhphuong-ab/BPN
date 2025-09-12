@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from './mongodb';
-import { BlogPost, generateSlug, calculateReadTime, extractExcerpt } from '@/models';
+import { BlogPost, generateSlug, calculateReadTime, extractSummary } from '@/models';
 
 export class BlogService {
   private static async getCollection() {
@@ -14,12 +14,13 @@ export class BlogService {
     
     const slug = generateSlug(postData.title);
     const readTime = calculateReadTime(postData.content);
-    const excerpt = extractExcerpt(postData.content);
+    // Use provided summary or generate one from content
+    const summary = postData.summary || extractSummary(postData.content);
     
     const post: BlogPost = {
       ...postData,
       slug,
-      excerpt,
+      summary,
       readTime,
       views: 0,
       createdAt: new Date(),
@@ -45,10 +46,13 @@ export class BlogService {
       updates.slug = generateSlug(updateData.title);
     }
 
-    // Update read time and excerpt if content changed
+    // Update read time and summary if content changed
     if (updateData.content) {
       updates.readTime = calculateReadTime(updateData.content);
-      updates.excerpt = extractExcerpt(updateData.content);
+      // Only auto-generate summary if not explicitly provided
+      if (!updateData.summary) {
+        updates.summary = extractSummary(updateData.content);
+      }
     }
 
     // Set published date if publishing for the first time
