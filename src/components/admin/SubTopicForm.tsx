@@ -1,5 +1,6 @@
 import React from 'react';
 import { SubTopicFormData } from '@/hooks/useTopics';
+import IconSelector from './IconSelector';
 
 interface SubTopicFormProps {
   formData: SubTopicFormData;
@@ -38,7 +39,7 @@ export default function SubTopicForm({
             required
             value={formData.name}
             onChange={(e) => onFormDataChange({ name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900"
             placeholder="Enter subtopic name..."
             disabled={isSubmitting}
           />
@@ -49,7 +50,7 @@ export default function SubTopicForm({
           <textarea
             value={formData.description}
             onChange={(e) => onFormDataChange({ description: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900"
             rows={3}
             placeholder="Optional description..."
             disabled={isSubmitting}
@@ -58,11 +59,9 @@ export default function SubTopicForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
-          <input
-            type="text"
-            value={formData.icon}
-            onChange={(e) => onFormDataChange({ icon: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          <IconSelector
+            selectedIcon={formData.icon}
+            onIconSelect={(icon) => onFormDataChange({ icon })}
             placeholder="📄"
             disabled={isSubmitting}
           />

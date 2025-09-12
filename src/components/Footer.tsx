@@ -73,11 +73,6 @@ export default function Footer() {
                   About
                 </Link>
               </li>
-              <li>
-                <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
-                  Contact
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -87,22 +82,17 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/blog?tag=technology" className="text-gray-300 hover:text-white transition-colors">
-                  Technology
+                  Finance
                 </Link>
               </li>
               <li>
                 <Link href="/blog?tag=programming" className="text-gray-300 hover:text-white transition-colors">
-                  Programming
+                  Rationality
                 </Link>
               </li>
               <li>
                 <Link href="/blog?tag=web-development" className="text-gray-300 hover:text-white transition-colors">
-                  Web Development
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog?tag=tutorials" className="text-gray-300 hover:text-white transition-colors">
-                  Tutorials
+                  Math
                 </Link>
               </li>
             </ul>
@@ -113,14 +103,6 @@ export default function Footer() {
           <p className="text-gray-300 text-sm">
             © {currentYear} {process.env.NEXT_PUBLIC_BLOG_AUTHOR || "Binh Phuong Nguyen"}. All rights reserved.
           </p>
-          <div className="mt-4 sm:mt-0 flex space-x-6">
-            <Link href="/privacy" className="text-gray-300 hover:text-white text-sm transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="text-gray-300 hover:text-white text-sm transition-colors">
-              Terms of Service
-            </Link>
-          </div>
         </div>
       </div>
     </footer>

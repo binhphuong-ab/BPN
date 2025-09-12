@@ -1,6 +1,7 @@
 import React from 'react';
 import { TopicFormData } from '@/hooks/useTopics';
 import { generateRandomColor } from '@/models/topic';
+import IconSelector from './IconSelector';
 
 interface TopicFormProps {
   formData: TopicFormData;
@@ -37,7 +38,7 @@ export default function TopicForm({
             required
             value={formData.name}
             onChange={(e) => onFormDataChange({ name: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             placeholder="Enter topic name..."
             disabled={isSubmitting}
           />
@@ -48,45 +49,41 @@ export default function TopicForm({
           <textarea
             value={formData.description}
             onChange={(e) => onFormDataChange({ description: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             rows={3}
             placeholder="Optional description..."
             disabled={isSubmitting}
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+          <IconSelector
+            selectedIcon={formData.icon}
+            onIconSelect={(icon) => onFormDataChange({ icon })}
+            placeholder="📁"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+          <div className="flex space-x-2">
             <input
-              type="text"
-              value={formData.icon}
-              onChange={(e) => onFormDataChange({ icon: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="📁"
+              type="color"
+              value={formData.color}
+              onChange={(e) => onFormDataChange({ color: e.target.value })}
+              className="w-10 h-10 border border-gray-300 rounded cursor-pointer"
               disabled={isSubmitting}
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-            <div className="flex space-x-2">
-              <input
-                type="color"
-                value={formData.color}
-                onChange={(e) => onFormDataChange({ color: e.target.value })}
-                className="w-10 h-10 border border-gray-300 rounded cursor-pointer"
-                disabled={isSubmitting}
-              />
-              <button
-                type="button"
-                onClick={() => onFormDataChange({ color: generateRandomColor() })}
-                className="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded border disabled:opacity-50"
-                disabled={isSubmitting}
-              >
-                Random
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => onFormDataChange({ color: generateRandomColor() })}
+              className="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded border disabled:opacity-50"
+              disabled={isSubmitting}
+            >
+              Random
+            </button>
           </div>
         </div>
 
