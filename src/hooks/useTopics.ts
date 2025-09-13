@@ -218,10 +218,6 @@ export function useTopics(): UseTopics {
   }, [editingTopic, selectedTopic, closeForms]);
 
   const deleteTopic = useCallback(async (topic: TopicWithCount) => {
-    if (!ErrorHandler.confirmAction(`Are you sure you want to delete "${topic.name}"? This will also delete all its subtopics.`)) {
-      return;
-    }
-
     await ErrorHandler.handleAsyncOperation(async () => {
       const response = await fetch(`/api/topics/${topic._id}`, {
         method: 'DELETE',
@@ -235,7 +231,7 @@ export function useTopics(): UseTopics {
       if (selectedTopic?._id?.toString() === topic._id?.toString()) {
         setSelectedTopicState(null);
       }
-      ErrorHandler.showSuccess('Topic deleted successfully');
+      ErrorHandler.showSuccess(`Topic "${topic.name}" and all its subtopics deleted successfully`);
     }, 'Failed to delete topic');
   }, [selectedTopic]);
 
@@ -290,10 +286,6 @@ export function useTopics(): UseTopics {
   }, [editingSubTopic, closeForms]);
 
   const deleteSubTopic = useCallback(async (subtopic: SubTopic) => {
-    if (!confirm(`Are you sure you want to delete "${subtopic.name}"?`)) {
-      return;
-    }
-
     try {
       const response = await fetch(`/api/subtopics/${subtopic._id}`, {
         method: 'DELETE',
@@ -308,10 +300,13 @@ export function useTopics(): UseTopics {
               : t
           ));
         }
+        ErrorHandler.showSuccess(`Subtopic "${subtopic.name}" deleted successfully`);
+      } else {
+        throw new Error('Failed to delete subtopic');
       }
     } catch (error) {
       console.error('Error deleting subtopic:', error);
-      throw error;
+      ErrorHandler.showError(`Failed to delete subtopic "${subtopic.name}"`);
     }
   }, [selectedTopic]);
 

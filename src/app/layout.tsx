@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { ToastProvider } from "@/contexts/ToastContext";
 import "./globals.css";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
@@ -63,11 +64,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col bg-gray-50`}
       >
-        <Navigation />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
+        <ToastProvider>
+          <Navigation />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <Footer />
+        </ToastProvider>
       </body>
     </html>
   );

@@ -4,17 +4,57 @@ export interface ErrorState {
   timestamp: Date;
 }
 
+// For use in React components
+let toastHandlers: {
+  showSuccess: (message: string, title?: string) => void;
+  showError: (message: string, title?: string) => void;
+  showWarning: (message: string, title?: string) => void;
+  showInfo: (message: string, title?: string) => void;
+} | null = null;
+
 export class ErrorHandler {
+  static setToastHandlers(handlers: typeof toastHandlers) {
+    toastHandlers = handlers;
+  }
+
   static showError(message: string): void {
-    // For now using alert, could be replaced with a toast library
-    alert(`Error: ${message}`);
+    if (toastHandlers) {
+      toastHandlers.showError(message);
+    } else {
+      // Fallback for non-React contexts
+      alert(`Error: ${message}`);
+    }
     console.error('Error:', message);
   }
 
   static showSuccess(message: string): void {
-    // For now using alert, could be replaced with a toast library
-    alert(`Success: ${message}`);
+    if (toastHandlers) {
+      toastHandlers.showSuccess(message);
+    } else {
+      // Fallback for non-React contexts
+      alert(`Success: ${message}`);
+    }
     console.log('Success:', message);
+  }
+
+  static showWarning(message: string): void {
+    if (toastHandlers) {
+      toastHandlers.showWarning(message);
+    } else {
+      // Fallback for non-React contexts
+      alert(`Warning: ${message}`);
+    }
+    console.warn('Warning:', message);
+  }
+
+  static showInfo(message: string): void {
+    if (toastHandlers) {
+      toastHandlers.showInfo(message);
+    } else {
+      // Fallback for non-React contexts
+      alert(`Info: ${message}`);
+    }
+    console.info('Info:', message);
   }
 
   static handleApiError(error: unknown, defaultMessage: string = 'An unexpected error occurred'): void {
@@ -43,7 +83,10 @@ export class ErrorHandler {
     }
   }
 
-  static confirmAction(message: string): boolean {
-    return confirm(message);
+  // Remove confirmation dialogs - operations will proceed immediately with success notification
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  static confirmAction(_message: string): boolean {
+    // Parameter is intentionally unused - keeping for API compatibility
+    return true; // Always proceed, show success notification after operation
   }
 }

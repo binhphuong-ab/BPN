@@ -246,10 +246,6 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
   };
 
   const deletePost = async () => {
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-      return;
-    }
-
     setLoading(true);
     try {
       const response = await fetch(`/api/posts/${postId}`, {
@@ -257,7 +253,12 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
       });
 
       if (response.ok) {
+        // Navigate first, then show success message
         router.push('/admin');
+        // Use a timeout to ensure navigation happens first
+        setTimeout(() => {
+          alert('Post deleted successfully!'); // Fallback alert for now since we're navigating away
+        }, 100);
       } else {
         alert('Failed to delete post');
       }

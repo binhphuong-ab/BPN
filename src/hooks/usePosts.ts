@@ -123,10 +123,6 @@ export function usePosts(): UsePosts {
 
   // Delete a single post
   const deletePost = async (id: string) => {
-    if (!ErrorHandler.confirmAction('Are you sure you want to delete this post?')) {
-      return;
-    }
-
     await ErrorHandler.handleAsyncOperation(async () => {
       const response = await fetch(`/api/posts/${id}`, {
         method: 'DELETE',
@@ -136,8 +132,9 @@ export function usePosts(): UsePosts {
         throw new Error('Failed to delete post');
       }
 
+      const deletedPost = posts.find(post => post._id?.toString() === id);
       setPosts(posts.filter(post => post._id?.toString() !== id));
-      ErrorHandler.showSuccess('Post deleted successfully');
+      ErrorHandler.showSuccess(`Post "${deletedPost?.title || 'Untitled'}" deleted successfully`);
     }, 'Failed to delete post');
   };
 
@@ -195,10 +192,6 @@ export function usePosts(): UsePosts {
 
   // Bulk operations
   const bulkDelete = async () => {
-    if (!ErrorHandler.confirmAction(`Are you sure you want to delete ${selectedPosts.length} posts?`)) {
-      return;
-    }
-
     await ErrorHandler.handleAsyncOperation(async () => {
       const deletePromises = selectedPosts.map(postId =>
         fetch(`/api/posts/${postId}`, { method: 'DELETE' })
