@@ -6,6 +6,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { useTopics } from '@/hooks/useTopics';
 
 // Component imports
+import AdminLayout from '@/components/admin/AdminLayout';
 import PostsStats from '@/components/admin/PostsStats';
 import PostsFilters from '@/components/admin/PostsFilters';
 import BulkActionsBar from '@/components/admin/BulkActionsBar';
@@ -20,7 +21,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 type Tab = 'posts' | 'topics';
 
-export default function AdminPage() {
+function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('posts');
   
   // Custom hooks for managing state and logic
@@ -212,5 +213,13 @@ export default function AdminPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <AdminLayout>
+      <AdminDashboard />
+    </AdminLayout>
   );
 }

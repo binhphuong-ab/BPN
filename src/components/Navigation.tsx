@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 
 const navItems = [
   { href: '/', label: 'Home' },
@@ -14,6 +15,7 @@ const navItems = [
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { isAuthenticated } = useAuth();
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -46,13 +48,15 @@ export default function Navigation() {
               );
             })}
             
-            {/* Admin link - you can add authentication check here */}
-            <Link
-              href="/admin"
-              className="px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-            >
-              Admin
-            </Link>
+            {/* Admin link - only show for authenticated users */}
+            {isAuthenticated && (
+              <Link
+                href="/admin"
+                className="px-3 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              >
+                Admin
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -105,13 +109,16 @@ export default function Navigation() {
                 );
               })}
               
-              <Link
-                href="/admin"
-                className="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                onClick={() => setIsOpen(false)}
-              >
-                Admin
-              </Link>
+              {/* Admin link - only show for authenticated users */}
+              {isAuthenticated && (
+                <Link
+                  href="/admin"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
             </div>
           </div>
         )}

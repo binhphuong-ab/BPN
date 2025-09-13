@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TopicService } from '@/lib/topic-service';
 import { Topic } from '@/models/topic';
+import { verifyToken } from '@/lib/auth-utils';
 
 // GET /api/topics/[id] - Get a single topic by ID
 export async function GET(
@@ -33,6 +34,15 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Check authentication
+    const isAuthenticated = await verifyToken(request);
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin access required.' },
+        { status: 401 }
+      );
+    }
+    
     const updateData: Partial<Topic> = await request.json();
     
     // If slug is being updated, check for uniqueness
@@ -71,6 +81,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Check authentication
+    const isAuthenticated = await verifyToken(request);
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin access required.' },
+        { status: 401 }
+      );
+    }
+    
     const deleted = await TopicService.deleteTopic(params.id);
     
     if (!deleted) {

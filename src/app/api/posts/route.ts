@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BlogService } from '@/lib/blog-service';
 import { BlogPost } from '@/models';
+import { verifyToken } from '@/lib/auth-utils';
 
 // GET /api/posts - Get all published posts with pagination
 export async function GET(request: NextRequest) {
@@ -30,6 +31,15 @@ export async function GET(request: NextRequest) {
 // POST /api/posts - Create a new post (admin only)
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const isAuthenticated = await verifyToken(request);
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin access required.' },
+        { status: 401 }
+      );
+    }
+    
     const postData: Omit<BlogPost, '_id' | 'createdAt' | 'updatedAt' | 'views'> = await request.json();
     
     // Basic validation

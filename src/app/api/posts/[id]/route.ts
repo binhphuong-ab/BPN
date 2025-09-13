@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BlogService } from '@/lib/blog-service';
 import { BlogPost } from '@/models';
+import { verifyToken } from '@/lib/auth-utils';
 
 // GET /api/posts/[id] - Get a single post by ID
 export async function GET(
@@ -33,6 +34,15 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Check authentication
+    const isAuthenticated = await verifyToken(request);
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin access required.' },
+        { status: 401 }
+      );
+    }
+    
     const updateData: Partial<BlogPost> = await request.json();
     
     const post = await BlogService.updatePost(params.id, updateData);
@@ -60,6 +70,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Check authentication
+    const isAuthenticated = await verifyToken(request);
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin access required.' },
+        { status: 401 }
+      );
+    }
+    
     const deleted = await BlogService.deletePost(params.id);
     
     if (!deleted) {

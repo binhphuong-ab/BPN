@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TopicService } from '@/lib/topic-service';
 import { Topic } from '@/models/topic';
+import { verifyToken } from '@/lib/auth-utils';
 
 // GET /api/topics - Get all topics
 export async function GET(request: NextRequest) {
@@ -28,6 +29,15 @@ export async function GET(request: NextRequest) {
 // POST /api/topics - Create a new topic
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const isAuthenticated = await verifyToken(request);
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin access required.' },
+        { status: 401 }
+      );
+    }
+    
     const topicData: Omit<Topic, '_id' | 'createdAt' | 'updatedAt'> = await request.json();
     
     // Basic validation
@@ -69,6 +79,15 @@ export async function POST(request: NextRequest) {
 // PUT /api/topics - Update topic order
 export async function PUT(request: NextRequest) {
   try {
+    // Check authentication
+    const isAuthenticated = await verifyToken(request);
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { error: 'Unauthorized. Admin access required.' },
+        { status: 401 }
+      );
+    }
+    
     const { updates }: { updates: { id: string; order: number }[] } = await request.json();
     
     await TopicService.updateTopicOrder(updates);
