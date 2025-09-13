@@ -21,7 +21,7 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="text-xl font-bold text-gray-900">
-              {process.env.NEXT_PUBLIC_BLOG_TITLE || "Binh Phuong Nguyen's Blog"}
+              {process.env.NEXT_PUBLIC_BLOG_TITLE || "MECE"}
             </Link>
           </div>
 

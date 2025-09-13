@@ -14,7 +14,7 @@ export default function Footer() {
             </h3>
             <p className="text-gray-300 mb-4 max-w-md">
               {process.env.NEXT_PUBLIC_BLOG_DESCRIPTION || 
-               "Personal blog about technology, programming, and insights"}
+               "Personal blog about rationality, math, and business"}
             </p>
             <div className="flex space-x-4">
               {/* Social links - replace with your actual social media */}
