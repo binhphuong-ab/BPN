@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
 
 /**
  * BlogPost Model with Topic/SubTopic Relationships
@@ -56,16 +57,6 @@ export interface BlogPost {
   views?: number;
 }
 
-// Helper function to generate slug from title
-export function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9 -]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .trim();
-}
-
 // Helper function to calculate reading time
 export function calculateReadTime(content: string): number {
   const wordsPerMinute = 200;
@@ -109,7 +100,7 @@ export function createBlogPostData(data: Partial<BlogPost>): Omit<BlogPost, '_id
   
   return {
     title: data.title || '',
-    slug: data.slug || generateSlug(data.title || ''),
+    slug: data.slug || generateVietnameseSlug(data.title || ''),
     content: data.content || '',
     summary: data.summary || extractSummary(data.content || ''),
     author: data.author || '',

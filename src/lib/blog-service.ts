@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from './mongodb';
-import { BlogPost, BlogPostWithTopics, generateSlug, calculateReadTime, extractSummary } from '@/models';
+import { BlogPost, BlogPostWithTopics, calculateReadTime, extractSummary } from '@/models';
+import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
 
 export class BlogService {
   private static async getCollection() {
@@ -12,7 +13,7 @@ export class BlogService {
   static async createPost(postData: Omit<BlogPost, '_id' | 'createdAt' | 'updatedAt' | 'views'>): Promise<BlogPost> {
     const collection = await this.getCollection();
     
-    const slug = generateSlug(postData.title);
+    const slug = generateVietnameseSlug(postData.title);
     const readTime = calculateReadTime(postData.content);
     // Use provided summary or generate one from content
     const summary = postData.summary || extractSummary(postData.content);
@@ -43,7 +44,7 @@ export class BlogService {
 
     // Update slug if title changed
     if (updateData.title) {
-      updates.slug = generateSlug(updateData.title);
+      updates.slug = generateVietnameseSlug(updateData.title);
     }
 
     // Update read time and summary if content changed
