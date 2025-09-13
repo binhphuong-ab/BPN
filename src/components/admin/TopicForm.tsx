@@ -1,6 +1,7 @@
 import React from 'react';
 import { TopicFormData } from '@/hooks/useTopics';
 import { generateRandomColor } from '@/models/topic';
+import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
 import IconSelector from './IconSelector';
 
 interface TopicFormProps {
@@ -22,7 +23,24 @@ export default function TopicForm({
 }: TopicFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    
+    // Ensure slug is generated if empty
+    const finalFormData = {
+      ...formData,
+      slug: formData.slug || generateVietnameseSlug(formData.name)
+    };
+    
+    await onSubmit(finalFormData);
+  };
+
+  // Auto-generate slug when name changes (only if slug is empty or auto-generated)
+  const handleNameChange = (newName: string) => {
+    const newSlug = generateVietnameseSlug(newName);
+    onFormDataChange({ 
+      name: newName,
+      // Only auto-update slug if it's empty or matches the previously generated slug
+      slug: formData.slug === '' || formData.slug === generateVietnameseSlug(formData.name) ? newSlug : formData.slug
+    });
   };
 
   return (
@@ -37,11 +55,43 @@ export default function TopicForm({
             type="text"
             required
             value={formData.name}
-            onChange={(e) => onFormDataChange({ name: e.target.value })}
+            onChange={(e) => handleNameChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
             placeholder="Enter topic name..."
             disabled={isSubmitting}
           />
+        </div>
+
+        <div>
+          <label htmlFor="topic-slug" className="block text-sm font-medium text-gray-700 mb-1">
+            URL Slug *
+          </label>
+          <div className="relative">
+            <svg className="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+            <input
+              type="text"
+              id="topic-slug"
+              required
+              value={formData.slug}
+              onChange={(e) => onFormDataChange({ slug: e.target.value })}
+              className="w-full pl-10 pr-20 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900"
+              placeholder="auto-generated-from-name"
+              disabled={isSubmitting}
+            />
+            <button
+              type="button"
+              onClick={() => onFormDataChange({ slug: generateVietnameseSlug(formData.name) })}
+              className="absolute right-2 top-2 px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors"
+              disabled={isSubmitting}
+            >
+              Auto
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 mt-1">
+            URL-friendly version of your topic name. Will be used in URLs.
+          </p>
         </div>
 
         <div>

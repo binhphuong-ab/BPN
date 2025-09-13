@@ -28,12 +28,29 @@ export async function GET(request: NextRequest) {
 // POST /api/topics - Create a new topic
 export async function POST(request: NextRequest) {
   try {
-    const topicData: Omit<Topic, '_id' | 'createdAt' | 'updatedAt' | 'slug'> = await request.json();
+    const topicData: Omit<Topic, '_id' | 'createdAt' | 'updatedAt'> = await request.json();
     
     // Basic validation
     if (!topicData.name) {
       return NextResponse.json(
         { error: 'Topic name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate slug if provided
+    if (!topicData.slug || topicData.slug.trim() === '') {
+      return NextResponse.json(
+        { error: 'Topic slug is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if slug already exists
+    const existingTopic = await TopicService.getTopicBySlug(topicData.slug);
+    if (existingTopic) {
+      return NextResponse.json(
+        { error: 'A topic with this slug already exists' },
         { status: 400 }
       );
     }

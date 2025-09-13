@@ -25,6 +25,11 @@ interface FormData {
   published: boolean;
   topicId?: string;
   subTopicId?: string;
+  document?: {
+    name: string;
+    url: string;
+    image?: string;
+  };
 }
 
 export default function PostEditor({ mode, postId }: PostEditorProps) {
@@ -51,6 +56,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
     published: false,
     topicId: '',
     subTopicId: '',
+    document: undefined,
   });
   const [imageError, setImageError] = useState<string>('');
   const [imageLoading, setImageLoading] = useState<boolean>(false);
@@ -151,6 +157,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
           published: postData.published,
           topicId: postData.topicId?.toString() || '',
           subTopicId: postData.subTopicId?.toString() || '',
+          document: postData.document,
         });
         
         // Set selected topic if post has one
@@ -198,6 +205,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
         published: formData.published,
         topicId: formData.topicId || undefined,
         subTopicId: formData.subTopicId || undefined,
+        document: formData.document,
       };
 
       const url = mode === 'create' ? '/api/posts' : `/api/posts/${postId}`;
@@ -592,6 +600,137 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                             Ready
                           </div>
                         </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Document Attachment */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-black mb-2">
+                      Document Attachment (Optional)
+                    </label>
+                    
+                    {/* Document Toggle */}
+                    <div className="mb-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (formData.document) {
+                            setFormData({ ...formData, document: undefined });
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              document: { name: '', url: '', image: '' } 
+                            });
+                          }
+                        }}
+                        className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${
+                          formData.document
+                            ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                            : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        {formData.document ? 'Remove Document' : 'Add Document'}
+                      </button>
+                    </div>
+
+                    {/* Document Form Fields */}
+                    {formData.document && (
+                      <div className="space-y-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        {/* Document Name */}
+                        <div>
+                          <label htmlFor="document-name" className="block text-sm font-medium text-black mb-2">
+                            Document Name *
+                          </label>
+                          <input
+                            type="text"
+                            id="document-name"
+                            value={formData.document.name}
+                            onChange={(e) => setFormData({ 
+                              ...formData, 
+                              document: { ...formData.document!, name: e.target.value } 
+                            })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black"
+                            placeholder="e.g., Research Paper, User Guide, Presentation"
+                          />
+                        </div>
+
+                        {/* Document URL */}
+                        <div>
+                          <label htmlFor="document-url" className="block text-sm font-medium text-black mb-2">
+                            Document URL *
+                          </label>
+                          <input
+                            type="text"
+                            id="document-url"
+                            value={formData.document.url}
+                            onChange={(e) => setFormData({ 
+                              ...formData, 
+                              document: { ...formData.document!, url: e.target.value } 
+                            })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black"
+                            placeholder="/documents/file.pdf or https://example.com/document.pdf"
+                          />
+                          <p className="text-sm text-gray-600 mt-1">
+                            Enter a relative path (e.g., /documents/file.pdf) or full URL (e.g., https://example.com/doc.pdf)
+                          </p>
+                        </div>
+
+                        {/* Document Thumbnail/Icon */}
+                        <div>
+                          <label htmlFor="document-image" className="block text-sm font-medium text-black mb-2">
+                            Document Thumbnail/Icon (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            id="document-image"
+                            value={formData.document.image || ''}
+                            onChange={(e) => setFormData({ 
+                              ...formData, 
+                              document: { ...formData.document!, image: e.target.value } 
+                            })}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-black"
+                            placeholder="/images/icons/pdf-icon.png"
+                          />
+                          <p className="text-sm text-gray-600 mt-1">
+                            Optional thumbnail or icon to represent the document
+                          </p>
+                        </div>
+
+                        {/* Document Preview */}
+                        {formData.document.name && formData.document.url && (
+                          <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                            <div className="flex items-center space-x-3">
+                              {formData.document.image ? (
+                                <Image
+                                  src={formData.document.image}
+                                  alt="Document icon"
+                                  width={32}
+                                  height={32}
+                                  className="rounded"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900">{formData.document.name}</div>
+                                <div className="text-sm text-gray-500">
+                                  {formData.document.url}
+                                </div>
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {formData.document.url.startsWith('http') ? 'External' : 'Local'}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1076,6 +1215,41 @@ Add your content sections here...`}
                     </div>
                   </div>
                 </div>
+
+                {/* Document Attachment Info */}
+                {formData.document && (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Document Attachment</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        {formData.document.image ? (
+                          <Image
+                            src={formData.document.image}
+                            alt="Document icon"
+                            width={32}
+                            height={32}
+                            className="rounded flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-gray-900 truncate">{formData.document.name}</div>
+                          <div className="text-sm text-gray-500 truncate">
+                            {formData.document.url}
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">
+                            {formData.document.url.startsWith('http') ? 'External URL' : 'Local File'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Quick Actions */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">

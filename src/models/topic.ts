@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb';
+import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
 
 export interface Topic {
   _id?: ObjectId;
@@ -26,14 +27,9 @@ export interface SubTopic {
   updatedAt: Date;
 }
 
-// Helper function to generate slug from name
+// Helper function to generate slug from name (using Vietnamese slug generator)
 export function generateTopicSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9 -]/g, '') // Remove special characters
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single
-    .trim();
+  return generateVietnameseSlug(name);
 }
 
 // Helper function to generate a random color

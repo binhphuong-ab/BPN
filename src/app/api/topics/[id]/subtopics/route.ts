@@ -34,12 +34,20 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const subTopicData: Omit<SubTopic, '_id' | 'createdAt' | 'updatedAt' | 'slug' | 'topicId'> = await request.json();
+    const subTopicData: Omit<SubTopic, '_id' | 'createdAt' | 'updatedAt' | 'topicId'> = await request.json();
     
     // Basic validation
     if (!subTopicData.name) {
       return NextResponse.json(
         { error: 'Subtopic name is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate slug if provided
+    if (!subTopicData.slug || subTopicData.slug.trim() === '') {
+      return NextResponse.json(
+        { error: 'Subtopic slug is required' },
         { status: 400 }
       );
     }
@@ -50,6 +58,15 @@ export async function POST(
       return NextResponse.json(
         { error: 'Topic not found' },
         { status: 404 }
+      );
+    }
+
+    // Check if slug already exists within this topic
+    const existingSubTopic = await TopicService.getSubTopicBySlug(topic.slug, subTopicData.slug);
+    if (existingSubTopic) {
+      return NextResponse.json(
+        { error: 'A subtopic with this slug already exists in this topic' },
+        { status: 400 }
       );
     }
 

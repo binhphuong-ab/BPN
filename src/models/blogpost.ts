@@ -28,6 +28,13 @@ export interface BlogPostWithTopics extends BlogPost {
   };
 }
 
+// Document interface for blog post attachments
+export interface Document {
+  name: string; // Display name for the document
+  url: string; // URL for the document (relative path or external URL)
+  image?: string; // Optional thumbnail/icon image for the document
+}
+
 // Filter interface for querying posts by topics
 export interface BlogPostFilter {
   topicId?: ObjectId | string;
@@ -50,6 +57,7 @@ export interface BlogPost {
   published: boolean;
   topicId?: ObjectId; // Reference to Topic
   subTopicId?: ObjectId; // Reference to SubTopic (optional, can be null if only topic is assigned)
+  document?: Document; // Optional document attachment (local file or external URL)
   createdAt: Date;
   updatedAt: Date;
   publishedAt?: Date;
@@ -89,6 +97,23 @@ export function validateTopicRelationship(topicId?: ObjectId, subTopicId?: Objec
   return true;
 }
 
+// Helper function to validate document field
+export function validateDocument(document?: Document): boolean {
+  if (!document) return true; // Document is optional
+  
+  // Document must have a name
+  if (!document.name || document.name.trim() === '') {
+    return false;
+  }
+  
+  // Document must have a URL
+  if (!document.url || document.url.trim() === '') {
+    return false;
+  }
+  
+  return true;
+}
+
 // Helper function to create a blog post with topic validation
 export function createBlogPostData(data: Partial<BlogPost>): Omit<BlogPost, '_id' | 'createdAt' | 'updatedAt'> {
   const now = new Date();
@@ -96,6 +121,11 @@ export function createBlogPostData(data: Partial<BlogPost>): Omit<BlogPost, '_id
   // Validate topic relationship
   if (!validateTopicRelationship(data.topicId, data.subTopicId)) {
     throw new Error('SubTopic cannot be assigned without a Topic');
+  }
+  
+  // Validate document field
+  if (!validateDocument(data.document)) {
+    throw new Error('Document must have a name and URL');
   }
   
   return {
@@ -109,6 +139,7 @@ export function createBlogPostData(data: Partial<BlogPost>): Omit<BlogPost, '_id
     published: data.published || false,
     topicId: data.topicId,
     subTopicId: data.subTopicId,
+    document: data.document,
     publishedAt: data.published ? now : undefined,
     readTime: data.readTime || calculateReadTime(data.content || ''),
     views: data.views || 0,
@@ -128,4 +159,9 @@ export function getTopicBreadcrumb(post: BlogPostWithTopics): string[] {
   }
   
   return breadcrumb;
+}
+
+// Helper function to check if a document URL is external
+export function isExternalDocumentUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://');
 }

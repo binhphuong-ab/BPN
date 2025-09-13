@@ -8,6 +8,7 @@ interface TopicWithCount extends Topic {
 
 export interface TopicFormData {
   name: string;
+  slug: string;
   description: string;
   icon: string;
   color: string;
@@ -17,6 +18,7 @@ export interface TopicFormData {
 
 export interface SubTopicFormData {
   name: string;
+  slug: string;
   description: string;
   icon: string;
   isActive: boolean;
@@ -69,6 +71,7 @@ export function useTopics(): UseTopics {
   
   const [topicFormData, setTopicFormData] = useState<TopicFormData>({
     name: '',
+    slug: '',
     description: '',
     icon: '📁',
     color: generateRandomColor(),
@@ -78,6 +81,7 @@ export function useTopics(): UseTopics {
 
   const [subTopicFormData, setSubTopicFormData] = useState<SubTopicFormData>({
     name: '',
+    slug: '',
     description: '',
     icon: '📄',
     isActive: true,
@@ -152,6 +156,7 @@ export function useTopics(): UseTopics {
     setEditingSubTopic(null);
     setTopicFormData({
       name: '',
+      slug: '',
       description: '',
       icon: '📁',
       color: generateRandomColor(),
@@ -160,6 +165,7 @@ export function useTopics(): UseTopics {
     });
     setSubTopicFormData({
       name: '',
+      slug: '',
       description: '',
       icon: '📄',
       isActive: true,
@@ -316,6 +322,7 @@ export function useTopics(): UseTopics {
       setEditingTopic(topic);
       setTopicFormData({
         name: topic.name,
+        slug: topic.slug,
         description: topic.description || '',
         icon: topic.icon || '📁',
         color: topic.color || generateRandomColor(),
@@ -326,6 +333,7 @@ export function useTopics(): UseTopics {
       setEditingTopic(null);
       setTopicFormData({
         name: '',
+        slug: '',
         description: '',
         icon: '📁',
         color: generateRandomColor(),
@@ -341,6 +349,7 @@ export function useTopics(): UseTopics {
       setEditingSubTopic(subtopic);
       setSubTopicFormData({
         name: subtopic.name,
+        slug: subtopic.slug,
         description: subtopic.description || '',
         icon: subtopic.icon || '📄',
         isActive: subtopic.isActive,
@@ -350,6 +359,7 @@ export function useTopics(): UseTopics {
       setEditingSubTopic(null);
       setSubTopicFormData({
         name: '',
+        slug: '',
         description: '',
         icon: '📄',
         isActive: true,

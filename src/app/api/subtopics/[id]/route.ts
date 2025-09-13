@@ -35,6 +35,23 @@ export async function PUT(
   try {
     const updateData: Partial<SubTopic> = await request.json();
     
+    // If slug is being updated, check for uniqueness within the topic
+    if (updateData.slug) {
+      const currentSubTopic = await TopicService.getSubTopicById(params.id);
+      if (currentSubTopic) {
+        const topic = await TopicService.getTopicById(currentSubTopic.topicId.toString());
+        if (topic) {
+          const existingSubTopic = await TopicService.getSubTopicBySlug(topic.slug, updateData.slug);
+          if (existingSubTopic && existingSubTopic._id?.toString() !== params.id) {
+            return NextResponse.json(
+              { error: 'A subtopic with this slug already exists in this topic' },
+              { status: 400 }
+            );
+          }
+        }
+      }
+    }
+    
     const subtopic = await TopicService.updateSubTopic(params.id, updateData);
     
     if (!subtopic) {

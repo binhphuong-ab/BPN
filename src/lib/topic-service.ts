@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from './mongodb';
-import { Topic, SubTopic, generateTopicSlug } from '@/models/topic';
+import { Topic, SubTopic } from '@/models/topic';
 
 export class TopicService {
   private static async getTopicsCollection() {
@@ -16,14 +16,11 @@ export class TopicService {
   // ===== TOPIC METHODS =====
 
   // Create a new topic
-  static async createTopic(topicData: Omit<Topic, '_id' | 'createdAt' | 'updatedAt' | 'slug'>): Promise<Topic> {
+  static async createTopic(topicData: Omit<Topic, '_id' | 'createdAt' | 'updatedAt'>): Promise<Topic> {
     const collection = await this.getTopicsCollection();
-    
-    const slug = generateTopicSlug(topicData.name);
     
     const topic: Topic = {
       ...topicData,
-      slug,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -40,11 +37,6 @@ export class TopicService {
       ...updateData,
       updatedAt: new Date(),
     };
-
-    // Update slug if name changed
-    if (updateData.name) {
-      updates.slug = generateTopicSlug(updateData.name);
-    }
 
     const result = await collection.findOneAndUpdate(
       { _id: new ObjectId(id) },
@@ -110,14 +102,11 @@ export class TopicService {
   // ===== SUBTOPIC METHODS =====
 
   // Create a new subtopic
-  static async createSubTopic(subTopicData: Omit<SubTopic, '_id' | 'createdAt' | 'updatedAt' | 'slug'>): Promise<SubTopic> {
+  static async createSubTopic(subTopicData: Omit<SubTopic, '_id' | 'createdAt' | 'updatedAt'>): Promise<SubTopic> {
     const collection = await this.getSubTopicsCollection();
-    
-    const slug = generateTopicSlug(subTopicData.name);
     
     const subTopic: SubTopic = {
       ...subTopicData,
-      slug,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -134,11 +123,6 @@ export class TopicService {
       ...updateData,
       updatedAt: new Date(),
     };
-
-    // Update slug if name changed
-    if (updateData.name) {
-      updates.slug = generateTopicSlug(updateData.name);
-    }
 
     const result = await collection.findOneAndUpdate(
       { _id: new ObjectId(id) },

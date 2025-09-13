@@ -35,6 +35,17 @@ export async function PUT(
   try {
     const updateData: Partial<Topic> = await request.json();
     
+    // If slug is being updated, check for uniqueness
+    if (updateData.slug) {
+      const existingTopic = await TopicService.getTopicBySlug(updateData.slug);
+      if (existingTopic && existingTopic._id?.toString() !== params.id) {
+        return NextResponse.json(
+          { error: 'A topic with this slug already exists' },
+          { status: 400 }
+        );
+      }
+    }
+    
     const topic = await TopicService.updateTopic(params.id, updateData);
     
     if (!topic) {
