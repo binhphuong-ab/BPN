@@ -3,11 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import CustomMDEditor from '@/components/MDEditor';
 import { BlogPost } from '@/models';
 import { useTopics } from '@/hooks/useTopics';
 import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
+import { useToast } from '@/contexts/ToastContext';
 
 interface PostEditorProps {
   mode: 'create' | 'edit';
@@ -34,6 +34,7 @@ interface FormData {
 
 export default function PostEditor({ mode, postId }: PostEditorProps) {
   const router = useRouter();
+  const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(mode === 'edit');
   const [post, setPost] = useState<BlogPost | null>(null);
@@ -60,6 +61,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
   });
   const [imageError, setImageError] = useState<string>('');
   const [imageLoading, setImageLoading] = useState<boolean>(false);
+  const [imageLoadingFailed, setImageLoadingFailed] = useState<boolean>(false);
 
   // Function to validate image URL
   const validateImageUrl = (url: string): { isValid: boolean; error?: string } => {
@@ -85,13 +87,27 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
       }
     }
 
-    return { isValid: true }; // Allow all relative and absolute paths
+    // For relative paths, add additional validation
+    if (trimmedUrl.startsWith('/')) {
+      // Basic validation for relative paths - check for dangerous patterns
+      if (trimmedUrl.includes('..') || trimmedUrl.includes('//')) {
+        return { isValid: false, error: 'Invalid relative path. Avoid ".." and "//" in paths.' };
+      }
+      
+      // Suggest proper format for relative paths
+      if (!trimmedUrl.startsWith('/images/') && !trimmedUrl.startsWith('/public/')) {
+        console.warn('Relative paths should typically start with /images/ for public assets');
+      }
+    }
+
+    return { isValid: true }; // Allow all relative and absolute paths with warnings
   };
 
   // Function to handle image URL changes with validation
   const handleImageChange = (newImageUrl: string) => {
     setFormData({ ...formData, image: newImageUrl });
     setImageError('');
+    setImageLoadingFailed(false);
     
     if (newImageUrl.trim()) {
       const validation = validateImageUrl(newImageUrl);
@@ -225,15 +241,15 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
           router.push(`/admin/edit/${result._id}`);
         } else {
           setPost(result);
-          alert('Post updated successfully!');
+          showSuccess('Post updated successfully!');
         }
       } else {
         const errorData = await response.json();
-        alert(errorData.error || `Failed to ${mode} post`);
+        showError(errorData.error || `Failed to ${mode} post`);
       }
     } catch (error) {
       console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} post:`, error);
-      alert(`Failed to ${mode} post`);
+      showError(`Failed to ${mode} post`);
     } finally {
       setLoading(false);
     }
@@ -261,18 +277,18 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
       });
 
       if (response.ok) {
-        // Navigate first, then show success message
-        router.push('/admin');
-        // Use a timeout to ensure navigation happens first
+        // Show success message before navigation
+        showSuccess('Post deleted successfully!');
+        // Navigate after a brief delay to show the toast
         setTimeout(() => {
-          alert('Post deleted successfully!'); // Fallback alert for now since we're navigating away
-        }, 100);
+          router.push('/admin');
+        }, 1000);
       } else {
-        alert('Failed to delete post');
+        showError('Failed to delete post');
       }
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Failed to delete post');
+      showError('Failed to delete post');
     } finally {
       setLoading(false);
     }
@@ -548,8 +564,10 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                       <div className="mt-6">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                            <span className="text-sm font-medium text-gray-800">Preview</span>
+                            <div className={`w-2 h-2 rounded-full ${imageLoadingFailed ? 'bg-red-400' : 'bg-green-400'}`}></div>
+                            <span className="text-sm font-medium text-gray-800">
+                              {imageLoadingFailed ? 'Failed to Load' : 'Preview'}
+                            </span>
                           </div>
                           <button
                             type="button"
@@ -557,6 +575,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                               setFormData({ ...formData, image: '' });
                               setImageError('');
                               setImageLoading(false);
+                              setImageLoadingFailed(false);
                             }}
                             className="text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-full transition-all duration-200 border border-transparent hover:border-red-200"
                           >
@@ -564,40 +583,66 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                           </button>
                         </div>
                         
-                        <div className="relative inline-block max-w-full group">
-                          {imageLoading && (
-                            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
-                              <div className="flex items-center space-x-2">
-                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
-                                <span className="text-xs text-gray-600 font-medium">Loading...</span>
-                              </div>
+                        {imageLoadingFailed ? (
+                          /* Show error state */
+                          <div className="relative inline-block max-w-full">
+                            <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                              <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                              </svg>
+                              <p className="text-sm text-gray-600 mb-2">Failed to load image</p>
+                              <p className="text-xs text-gray-500">The image path might be incorrect or the file doesn&apos;t exist</p>
                             </div>
-                          )}
-                          
-                          <Image
-                            src={formData.image}
-                            alt="Featured image preview"
-                            width={400}
-                            height={200}
-                            className="block max-w-full max-h-48 object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.02]"
-                            onLoad={() => setImageLoading(false)}
-                            onError={() => {
-                              setImageLoading(false);
-                              setImageError('Failed to load image. Please check the URL.');
-                            }}
-                          />
-                          
-                          {/* Subtle overlay on hover */}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 rounded-lg"></div>
-                        </div>
+                          </div>
+                        ) : (
+                          /* Show image preview */
+                          <div className="relative inline-block max-w-full group">
+                            {imageLoading && (
+                              <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+                                  <span className="text-xs text-gray-600 font-medium">Loading...</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <img
+                              src={formData.image}
+                              alt="Featured image preview"
+                              className="block max-w-full max-h-48 object-contain rounded-lg transition-transform duration-300 group-hover:scale-[1.02]"
+                              onLoad={() => {
+                                setImageLoading(false);
+                                setImageLoadingFailed(false);
+                              }}
+                              onError={() => {
+                                setImageLoading(false);
+                                setImageLoadingFailed(true);
+                              }}
+                            />
+                            
+                            {/* Subtle overlay on hover */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 rounded-lg"></div>
+                          </div>
+                        )}
                         
                         <div className="mt-3 flex items-center justify-between">
                           <p className="text-xs text-gray-500 truncate flex-1 mr-4">{formData.image}</p>
                           <div className="flex items-center text-xs text-gray-400">
-                            <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Ready
+                            {imageLoadingFailed ? (
+                              <>
+                                <svg className="w-3 h-3 mr-1 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                <span className="text-red-400">Error</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Ready
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -705,20 +750,24 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                           <div className="mt-4 p-3 bg-white rounded-lg border border-gray-200">
                             <div className="flex items-center space-x-3">
                               {formData.document.image ? (
-                                <Image
+                                <img
                                   src={formData.document.image}
                                   alt="Document icon"
-                                  width={32}
-                                  height={32}
-                                  className="rounded"
+                                  className="w-8 h-8 rounded object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const fallback = target.nextElementSibling as HTMLElement;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }}
                                 />
-                              ) : (
-                                <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
+                              ) : null}
+                              {/* Fallback icon - initially hidden if image exists */}
+                              <div className={`w-8 h-8 bg-gray-100 rounded flex items-center justify-center ${formData.document.image ? 'hidden' : ''}`}>
                                   <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                   </svg>
                                 </div>
-                              )}
                               <div className="flex-1">
                                 <div className="font-medium text-gray-900">{formData.document.name}</div>
                                 <div className="text-sm text-gray-500">
@@ -1223,20 +1272,24 @@ Add your content sections here...`}
                     <div className="space-y-3">
                       <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                         {formData.document.image ? (
-                          <Image
+                          <img
                             src={formData.document.image}
                             alt="Document icon"
-                            width={32}
-                            height={32}
-                            className="rounded flex-shrink-0"
+                            className="w-8 h-8 rounded flex-shrink-0 object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
                           />
-                        ) : (
-                          <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+                        ) : null}
+                        {/* Fallback icon */}
+                        <div className={`w-8 h-8 bg-gray-200 rounded flex items-center justify-center flex-shrink-0 ${formData.document.image ? 'hidden' : ''}`}>
                             <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                           </div>
-                        )}
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-gray-900 truncate">{formData.document.name}</div>
                           <div className="text-sm text-gray-500 truncate">
