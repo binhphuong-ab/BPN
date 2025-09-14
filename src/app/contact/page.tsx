@@ -17,90 +17,88 @@ export default function ContactPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Contact Form */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Send a Message</h2>
-            <form className="space-y-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Your full name"
-                />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Brief Intro */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">About Me</h2>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="w-6 h-6 text-blue-600 mt-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h3M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-lg font-medium text-gray-900">Engineering Business</h3>
+                    <p className="text-gray-600 text-sm">I run an engineering business focused on building scalable solutions</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="w-6 h-6 text-blue-600 mt-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-lg font-medium text-gray-900">LessWrong Member</h3>
+                    <p className="text-gray-600 text-sm">Active in the rationality community and evidence-based thinking</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="w-6 h-6 text-blue-600 mt-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-lg font-medium text-gray-900">Math Lover</h3>
+                    <p className="text-gray-600 text-sm">Passionate about mathematical concepts and their applications</p>
+                  </div>
+                </div>
               </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="your.email@example.com"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                  Subject *
-                </label>
-                <input
-                  type="text"
-                  id="subject"
-                  name="subject"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="What's this about?"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                  Message *
-                </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  rows={6}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Your message here..."
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                Send Message
-              </button>
-            </form>
-
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> This form is for demonstration purposes. In a production environment, 
-                you would need to implement server-side handling for form submissions.
-              </p>
             </div>
           </div>
 
           {/* Contact Information */}
-          <div className="space-y-8">
+          <div className="lg:col-span-2 space-y-8">
             {/* Direct Contact */}
             <div className="bg-white rounded-lg shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Information</h2>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     <svg
@@ -119,7 +117,12 @@ export default function ContactPage() {
                   </div>
                   <div className="ml-3">
                     <h3 className="text-lg font-medium text-gray-900">Email</h3>
-                    <p className="text-gray-600">contact@example.com</p>
+                    <a 
+                      href="mailto:2015phuong@gmail.com"
+                      className="text-gray-600 hover:text-blue-800 transition-colors"
+                    >
+                      2015phuong@gmail.com
+                    </a>
                     <p className="text-sm text-gray-500 mt-1">
                       I typically respond within 24-48 hours
                     </p>
@@ -222,19 +225,25 @@ export default function ContactPage() {
                 </a>
 
                 <a
-                  href="https://twitter.com"
+                  href="https://lesswrong.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <svg
                     className="w-6 h-6 text-gray-600 mr-3"
-                    fill="currentColor"
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    />
                   </svg>
-                  <span className="text-sm font-medium text-gray-900">Twitter</span>
+                  <span className="text-sm font-medium text-gray-900">LessWrong</span>
                 </a>
 
                 <a
@@ -258,24 +267,32 @@ export default function ContactPage() {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Collaboration */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Let&apos;s Collaborate!</h2>
-              <p className="text-gray-600 mb-4">
-                I&apos;m always interested in discussing:
-              </p>
-              <ul className="list-disc list-inside text-gray-600 space-y-1 mb-6">
-                <li>Web development projects</li>
-                <li>Open source contributions</li>
-                <li>Technical consulting</li>
-                <li>Speaking opportunities</li>
-                <li>Mentoring and knowledge sharing</li>
+        {/* Collaboration Section - Full Width */}
+        <div className="mt-12">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Let&apos;s Collaborate!</h2>
+            <p className="text-gray-600 mb-4">
+              I&apos;m always interested in discussing:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>Engineering and machinery projects</li>
+                <li>Mathematical concepts and applications</li>
+                <li>Rationality and evidence-based thinking</li>
               </ul>
-              <p className="text-sm text-gray-500">
-                Feel free to reach out even if you just want to chat about technology or share interesting ideas!
-              </p>
+              <ul className="list-disc list-inside text-gray-600 space-y-1">
+                <li>LessWrong weekly meetup in Saigon</li>
+                <li>Book discussions and reviews</li>
+                <li>Speaking and knowledge sharing</li>
+              </ul>
             </div>
+            <p className="text-sm text-gray-500 mt-6">
+              Feel free to reach out via email even if you just want to chat about technology, 
+              mathematics, or share interesting ideas!
+            </p>
           </div>
         </div>
       </div>
