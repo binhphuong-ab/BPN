@@ -55,7 +55,7 @@ A modern, feature-rich personal blog built with Next.js 14, TypeScript, and Mong
    NEXTAUTH_SECRET=your-secret-here-change-in-production
    NEXTAUTH_URL=http://localhost:3000
    BLOG_TITLE="Binh Phuong Nguyen's Blog"
-   BLOG_DESCRIPTION="Personal blog about technology, programming, and insights"
+   BLOG_DESCRIPTION="Personal blog about rationality, math, and business"
    BLOG_AUTHOR="Binh Phuong Nguyen"
    ```
 
