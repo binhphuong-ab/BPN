@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
-interface EnhancedSideProgressProps {
+interface ReadingProgressProps {
   readTime?: number;
   className?: string;
 }
 
-export function EnhancedSideProgress({ readTime, className = '' }: EnhancedSideProgressProps) {
+export function ReadingProgress({ readTime, className = '' }: ReadingProgressProps) {
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
