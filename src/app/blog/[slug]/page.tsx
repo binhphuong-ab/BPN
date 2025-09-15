@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { BlogService } from '@/lib/blog-service';
 import { MarkdownPreview } from '@/components/MDEditor';
-import { ReadingProgressWithIndicator } from '@/components/ReadingProgressWithIndicator';
+import { EnhancedSideProgress } from '@/components/EnhancedSideProgress';
 import { format } from 'date-fns';
 
 interface BlogPostPageProps {
@@ -66,8 +66,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Reading Progress Bar */}
-      <ReadingProgressWithIndicator target="article" readTime={post.readTime} />
+      {/* Enhanced Side Reading Progress */}
+      <EnhancedSideProgress readTime={post.readTime} />
       
       <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Breadcrumb */}
