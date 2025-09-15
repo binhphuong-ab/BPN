@@ -53,7 +53,7 @@ export function SideReadingProgress({ className = '' }: SideReadingProgressProps
       <div className="relative w-1 h-32 bg-gray-200 rounded-full shadow-sm">
         {/* Progress Fill */}
         <div
-          className="absolute bottom-0 w-full bg-gradient-to-t from-blue-500 to-purple-600 rounded-full transition-all duration-200 ease-out"
+          className="absolute top-0 w-full bg-gradient-to-b from-purple-600 to-blue-500 rounded-full transition-all duration-200 ease-out"
           style={{ height: `${progress}%` }}
         />
         
@@ -61,8 +61,8 @@ export function SideReadingProgress({ className = '' }: SideReadingProgressProps
         <div
           className="absolute w-3 h-3 bg-white border-2 border-blue-500 rounded-full shadow-md transform -translate-x-1 transition-all duration-200 ease-out"
           style={{ 
-            bottom: `${Math.max(0, Math.min(100, progress))}%`,
-            transform: 'translateX(-25%) translateY(50%)'
+            top: `${Math.max(0, Math.min(100, progress))}%`,
+            transform: 'translateX(-25%) translateY(-50%)'
           }}
         />
       </div>

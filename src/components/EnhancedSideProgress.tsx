@@ -68,7 +68,7 @@ export function EnhancedSideProgress({ readTime, className = '' }: EnhancedSideP
           <div className="w-1.5 h-40 bg-gray-200/70 rounded-full backdrop-blur-sm shadow-sm">
             {/* Progress Fill */}
             <div
-              className="absolute bottom-0 w-full bg-gradient-to-t from-blue-500 via-blue-600 to-purple-600 rounded-full transition-all duration-300 ease-out shadow-sm"
+              className="absolute top-0 w-full bg-gradient-to-b from-purple-600 via-blue-600 to-blue-500 rounded-full transition-all duration-300 ease-out shadow-sm"
               style={{ height: `${progress}%` }}
             />
           </div>
@@ -79,9 +79,9 @@ export function EnhancedSideProgress({ readTime, className = '' }: EnhancedSideP
               isHovered ? 'scale-125' : 'scale-100'
             }`}
             style={{ 
-              bottom: `${Math.max(0, Math.min(100, progress))}%`,
+              top: `${Math.max(0, Math.min(100, progress))}%`,
               left: '50%',
-              transform: `translateX(-50%) translateY(50%) scale(${isHovered ? 1.25 : 1})`
+              transform: `translateX(-50%) translateY(-50%) scale(${isHovered ? 1.25 : 1})`
             }}
           >
             {/* Inner glow */}
