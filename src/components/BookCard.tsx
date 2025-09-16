@@ -136,24 +136,7 @@ export default function BookCard({ book, className = '' }: BookCardProps) {
           </p>
         )}
 
-        {/* Genres */}
-        {book.genre && book.genre.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {book.genre.slice(0, 3).map((genre, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-              >
-                {genre}
-              </span>
-            ))}
-            {book.genre.length > 3 && (
-              <span className="text-xs text-gray-500 font-medium">
-                +{book.genre.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
+        {/* Genres - TODO: Implement genre display with new genreIds/subGenreIds structure */}
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">

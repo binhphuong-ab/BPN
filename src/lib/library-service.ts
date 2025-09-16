@@ -100,8 +100,8 @@ export class LibraryService {
       mongoFilter.type = filter.type;
     }
 
-    if (filter.genre) {
-      mongoFilter.genre = { $in: [filter.genre] };
+    if (filter.genreId) {
+      mongoFilter.genreIds = { $in: [filter.genreId] };
     }
 
     if (filter.author) {
@@ -224,11 +224,12 @@ export class LibraryService {
 
   // Get books by genre
   static async getBooksByGenre(
-    genre: string,
+    genreId: string | ObjectId,
     page: number = 1,
     limit: number = 12
   ): Promise<{ books: Book[]; total: number; hasMore: boolean }> {
-    return await this.getBooks({ genre }, page, limit);
+    const genreObjectId = typeof genreId === 'string' ? new ObjectId(genreId) : genreId;
+    return await this.getBooks({ genreId: genreObjectId }, page, limit);
   }
 
   // Get all unique genres

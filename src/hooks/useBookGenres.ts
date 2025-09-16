@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ErrorHandler } from '@/utils/errorHandler';
-import { BookGenre, SubGenre, BookGenreWithCount, generateRandomGenreColor } from '@/models/bookgenre';
+import { SubGenre, BookGenreWithCount, generateRandomGenreColor } from '@/models/bookgenre';
 
 export interface BookGenreFormData {
   name: string;

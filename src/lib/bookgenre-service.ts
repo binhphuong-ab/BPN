@@ -101,7 +101,7 @@ export class BookGenreService {
   // Check if slug exists (for validation)
   static async isSlugTaken(slug: string, excludeId?: string): Promise<boolean> {
     const collection = await this.getBookGenresCollection();
-    const query: any = { slug };
+    const query: { slug: string; _id?: { $ne: ObjectId } } = { slug };
     
     if (excludeId) {
       query._id = { $ne: new ObjectId(excludeId) };
@@ -183,7 +183,7 @@ export class BookGenreService {
   // Check if subgenre slug exists within a genre (for validation)
   static async isSubGenreSlugTaken(genreId: string, slug: string, excludeId?: string): Promise<boolean> {
     const collection = await this.getSubGenresCollection();
-    const query: any = { 
+    const query: { genreId: ObjectId; slug: string; _id?: { $ne: ObjectId } } = { 
       genreId: new ObjectId(genreId),
       slug 
     };

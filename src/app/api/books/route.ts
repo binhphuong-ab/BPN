@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { LibraryService } from '@/lib/library-service';
 import { Book, BookFilter, validateImageUrls } from '@/models/book';
 import { verifyToken } from '@/lib/auth-utils';
+import { ObjectId } from 'mongodb';
 
 // GET /api/books - Get all books with filtering and pagination
 export async function GET(request: NextRequest) {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     if (search) filter.search = search;
     if (language) filter.language = language;
     if (type) filter.type = type;
-    if (genre) filter.genre = genre;
+    if (genre) filter.genreId = new ObjectId(genre);
     if (author) filter.author = author;
     if (featured !== undefined) filter.featured = featured;
 

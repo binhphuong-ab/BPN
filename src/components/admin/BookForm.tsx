@@ -32,6 +32,11 @@ interface DownloadInput {
   error?: string;
 }
 
+interface BookFormData extends Omit<Partial<Book>, 'genreIds' | 'subGenreIds'> {
+  genreIds?: string[];
+  subGenreIds?: string[];
+}
+
 export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
@@ -48,7 +53,7 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
     setSelectedBookGenre
   } = useBookGenres();
   
-  const [formData, setFormData] = useState<Partial<Book>>({
+  const [formData, setFormData] = useState<BookFormData>({
     title: '',
     slug: '',
     author: '',
@@ -278,7 +283,7 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
     } finally {
       setLoading(false);
     }
-  }, [mode, bookId, showError, router]);
+  }, [mode, bookId, showError, router, bookGenres, setSelectedBookGenre]);
 
   useEffect(() => {
     if (mode === 'edit') {

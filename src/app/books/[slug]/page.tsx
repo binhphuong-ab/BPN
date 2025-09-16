@@ -33,7 +33,6 @@ export async function generateMetadata({ params }: BookPageProps): Promise<Metad
     keywords: [
       book.title,
       book.author || '',
-      ...(book.genre || []),
       book.language,
       book.type,
     ].filter(Boolean),
@@ -280,20 +279,7 @@ export default async function BookPage({ params }: BookPageProps) {
                   </p>
                 )}
 
-                {/* Genres */}
-                {book.genre && book.genre.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-6">
-                    {book.genre.map((genre, index) => (
-                      <Link
-                        key={index}
-                        href={`/books?genre=${encodeURIComponent(genre)}`}
-                        className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                      >
-                        {genre}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                {/* Genres - TODO: Implement genre display with new genreIds/subGenreIds structure */}
               </header>
 
               {/* Summary */}
