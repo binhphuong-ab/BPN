@@ -468,7 +468,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                   </div>
 
                   {/* Slug */}
-                  <div>
+                  <div className="md:col-span-2">
                     <label htmlFor="slug" className="block text-sm font-medium text-black mb-2">
                       URL Slug *
                     </label>
