@@ -795,15 +795,15 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                         <span className="ml-2 text-gray-600">Loading topics...</span>
                       </div>
                     ) : (
-                      <div className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50">
+                      <div className="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
                         <div className="space-y-1">
                           {/* Default "Select a topic" option */}
                           <div
                             onClick={() => handleTopicChange('')}
                             className={`px-3 py-2 rounded cursor-pointer transition-colors ${
                               !formData.topicId
-                                ? 'bg-blue-600 text-white'
-                                : 'text-gray-700 hover:bg-blue-100'
+                                ? 'bg-gray-600 text-white'
+                                : 'text-gray-700 hover:bg-gray-100'
                             }`}
                           >
                             Select a topic (optional)
@@ -816,8 +816,8 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                               onClick={() => handleTopicChange(topic._id?.toString() || '')}
                               className={`px-3 py-2 rounded cursor-pointer transition-colors flex items-center ${
                                 formData.topicId === topic._id?.toString()
-                                  ? 'bg-blue-600 text-white'
-                                  : 'text-gray-700 hover:bg-blue-100'
+                                  ? 'bg-gray-600 text-white'
+                                  : 'text-gray-700 hover:bg-gray-100'
                               }`}
                             >
                               <span className="mr-2">{topic.icon || '📁'}</span>
@@ -825,7 +825,7 @@ export default function PostEditor({ mode, postId }: PostEditorProps) {
                               {topic.subTopicsCount && topic.subTopicsCount > 0 && (
                                 <span className={`ml-2 text-xs flex-shrink-0 ${
                                   formData.topicId === topic._id?.toString()
-                                    ? 'text-blue-200'
+                                    ? 'text-gray-200'
                                     : 'text-gray-500'
                                 }`}>
                                   {topic.subTopicsCount}
