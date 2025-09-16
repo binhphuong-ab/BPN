@@ -3,3 +3,4 @@ export * from './blogpost';
 export * from './user';
 export * from './comment';
 export * from './topic';
+export * from './book';

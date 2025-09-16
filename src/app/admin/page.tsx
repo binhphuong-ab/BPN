@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePosts } from '@/hooks/usePosts';
 import { useTopics } from '@/hooks/useTopics';
+import { useBooks } from '@/hooks/useBooks';
 
 // Component imports
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -17,20 +18,33 @@ import SubTopicsList from '@/components/admin/SubTopicsList';
 import TopicForm from '@/components/admin/TopicForm';
 import SubTopicForm from '@/components/admin/SubTopicForm';
 import TopicPreview from '@/components/admin/TopicPreview';
+import BooksStats from '@/components/admin/BooksStats';
+import BooksFilters from '@/components/admin/BooksFilters';
+import BooksBulkActions from '@/components/admin/BooksBulkActions';
+import BooksTable from '@/components/admin/BooksTable';
+import EmptyBooksState from '@/components/admin/EmptyBooksState';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-type Tab = 'posts' | 'topics';
+type Tab = 'posts' | 'topics' | 'books';
 
 function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<Tab>('posts');
+  // Check URL parameters for tab
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const initialTab = searchParams?.get('tab') as Tab || 'posts';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   
   // Custom hooks for managing state and logic
   const postsHook = usePosts();
   const topicsHook = useTopics();
+  const booksHook = useBooks();
 
   const hasSearchOrFilters = !!(postsHook.filters.search || 
     postsHook.filters.status !== 'all' || 
     postsHook.filters.language !== 'all');
+
+  const hasBooksSearchOrFilters = !!(booksHook.filters.search ||
+    booksHook.filters.language !== 'all' ||
+    booksHook.filters.type !== 'all');
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -49,12 +63,21 @@ function AdminDashboard() {
               >
                 View Blog
               </Link>
-              <Link
-                href="/admin/new"
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                Create New Post
-              </Link>
+              {activeTab === 'books' ? (
+                <Link
+                  href="/admin/books/new"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  Add New Book
+                </Link>
+              ) : (
+                <Link
+                  href="/admin/new"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  Create New Post
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -96,6 +119,24 @@ function AdminDashboard() {
                   <span>Topic Management</span>
                   <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
                     {topicsHook.topics.length}
+                  </span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('books')}
+                className={`py-4 px-6 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'books'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  <span>Library Books</span>
+                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+                    {booksHook.books.length}
                   </span>
                 </div>
               </button>
@@ -207,6 +248,46 @@ function AdminDashboard() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'books' && (
+              <div>
+                {/* Books Stats */}
+                <BooksStats books={booksHook.books} />
+
+                {/* Books Table */}
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                  <BooksFilters
+                    filters={booksHook.filters}
+                    onFiltersChange={booksHook.updateFilters}
+                    booksCount={booksHook.books.length}
+                    filteredCount={booksHook.filteredBooks.length}
+                  />
+
+                  <BooksBulkActions
+                    selectedCount={booksHook.selectedBooks.length}
+                    onClearSelection={booksHook.clearSelection}
+                    onBulkFeature={() => booksHook.bulkToggleFeatured(true)}
+                    onBulkUnfeature={() => booksHook.bulkToggleFeatured(false)}
+                    onBulkDelete={booksHook.bulkDelete}
+                  />
+
+                  {booksHook.loading ? (
+                    <LoadingSpinner />
+                  ) : booksHook.filteredBooks.length > 0 ? (
+                    <BooksTable
+                      books={booksHook.filteredBooks}
+                      selectedBooks={booksHook.selectedBooks}
+                      onSelectAll={booksHook.selectAll}
+                      onSelectBook={booksHook.selectBook}
+                      onToggleFeatured={booksHook.toggleFeatured}
+                      onDeleteBook={booksHook.deleteBook}
+                    />
+                  ) : (
+                    <EmptyBooksState hasFilters={hasBooksSearchOrFilters} />
+                  )}
+                </div>
               </div>
             )}
           </div>

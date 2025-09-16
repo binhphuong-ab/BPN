@@ -34,3 +34,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# sensitive information
+VPS_ACCESS_INFO.md
+SSH_KEYS/
+*.pem
+*.key

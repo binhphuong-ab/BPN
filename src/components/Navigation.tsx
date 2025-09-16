@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 const navItems = [
   { href: '/', label: 'Home' },
   { href: '/blog', label: 'Blog' },
+  { href: '/books', label: 'Books' },
   { href: '/contact', label: 'Contact' },
 ];
 
@@ -30,7 +31,8 @@ export default function Navigation() {
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => {
               const isActive = pathname === item.href || 
-                (item.href === '/blog' && pathname.startsWith('/blog'));
+                (item.href === '/blog' && pathname.startsWith('/blog')) ||
+                (item.href === '/books' && pathname.startsWith('/books'));
               
               return (
                 <Link
@@ -90,7 +92,8 @@ export default function Navigation() {
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
               {navItems.map((item) => {
                 const isActive = pathname === item.href || 
-                  (item.href === '/blog' && pathname.startsWith('/blog'));
+                  (item.href === '/blog' && pathname.startsWith('/blog')) ||
+                  (item.href === '/books' && pathname.startsWith('/books'));
                 
                 return (
                   <Link
