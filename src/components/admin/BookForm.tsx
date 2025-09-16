@@ -7,6 +7,7 @@ import CustomMDEditor from '@/components/MDEditor';
 import { useToast } from '@/contexts/ToastContext';
 import { Book, BookImage, BookDownload, createBookImage, createBookDownload } from '@/models/book';
 import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
+import { useBookGenres } from '@/hooks/useBookGenres';
 
 interface BookFormProps {
   mode: 'create' | 'edit';
@@ -37,6 +38,16 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(mode === 'edit');
   
+  // BookGenre management
+  const {
+    bookGenres,
+    subGenres,
+    loading: bookGenresLoading,
+    subGenresLoading,
+    refreshBookGenres,
+    setSelectedBookGenre
+  } = useBookGenres();
+  
   const [formData, setFormData] = useState<Partial<Book>>({
     title: '',
     slug: '',
@@ -49,10 +60,11 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
     downloads: [],
     images: [],
     publishedYear: undefined,
-    genre: [],
     pages: undefined,
     fileFormat: '',
     featured: false,
+    genreIds: [],
+    subGenreIds: [],
   });
   
   const [imageInputs, setImageInputs] = useState<ImageInput[]>([{ 
@@ -142,6 +154,31 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
     return { isValid: false, error: 'URL must be either a full URL (https://...) or a relative path (/documents/...)' };
   };
 
+  // Load book genres on mount
+  useEffect(() => {
+    refreshBookGenres();
+  }, [refreshBookGenres]);
+
+  // Handle genre selection
+  const handleBookGenreChange = (genreId: string) => {
+    const genre = bookGenres.find(g => g._id?.toString() === genreId);
+    setSelectedBookGenre(genre || null);
+    
+    setFormData(prev => ({
+      ...prev,
+      genreIds: genreId ? [genreId] : [], // Use string IDs, convert to ObjectId on server
+      subGenreIds: [] // Reset subgenres when genre changes
+    }));
+  };
+
+  // Handle subgenre selection
+  const handleSubGenreChange = (subGenreId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      subGenreIds: subGenreId ? [subGenreId] : [] // Use string IDs, convert to ObjectId on server
+    }));
+  };
+
   // Fetch book data if editing
   const fetchBook = useCallback(async () => {
     if (mode === 'create' || !bookId) return;
@@ -167,7 +204,8 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
           summary: book.summary || '',
           downloads: book.downloads || [],
           publishedYear: book.publishedYear,
-          genre: book.genre || [],
+          genreIds: book.genreIds?.map(id => id.toString()) || [],
+          subGenreIds: book.subGenreIds?.map(id => id.toString()) || [],
           pages: book.pages,
           fileFormat: book.fileFormat || '',
           featured: book.featured || false,
@@ -218,6 +256,14 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
         } else {
           setDownloadInputs(bookDownloadInputs);
         }
+
+        // Set selected genre if book has one
+        if (book.genreIds && book.genreIds.length > 0) {
+          const genre = bookGenres.find(g => g._id?.toString() === book.genreIds![0]?.toString());
+          if (genre) {
+            setSelectedBookGenre(genre);
+          }
+        }
       } else if (response.status === 404) {
         showError('Book not found');
         router.push('/admin?tab=books');
@@ -258,13 +304,6 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
     }));
   };
 
-  const handleGenreChange = (value: string) => {
-    const genres = value.split(',').map(g => g.trim()).filter(Boolean);
-    setFormData(prev => ({
-      ...prev,
-      genre: genres
-    }));
-  };
   
   const addImageInput = () => {
     const newId = (imageInputs.length + 1).toString();
@@ -449,6 +488,8 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
         images: processedImages,
         summary: formData.summary?.trim() || undefined,
         fileFormat: formData.fileFormat?.trim() || undefined,
+        genreIds: formData.genreIds && formData.genreIds.length > 0 ? formData.genreIds : undefined,
+        subGenreIds: formData.subGenreIds && formData.subGenreIds.length > 0 ? formData.subGenreIds : undefined,
       };
 
       const url = mode === 'create' ? '/api/books' : `/api/books/${bookId}`;
@@ -471,8 +512,14 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
           showSuccess('Book updated successfully!');
         }
       } else {
-        const error = await response.json();
-        showError(error.error || `Failed to ${mode === 'create' ? 'add' : 'update'} book`);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText };
+        }
+        showError(errorData.error || `Failed to ${mode === 'create' ? 'add' : 'update'} book`);
       }
     } catch (error) {
       console.error(`Error ${mode === 'create' ? 'adding' : 'updating'} book:`, error);
@@ -808,6 +855,122 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
                   Choose the format of your book
                 </p>
               </div>
+
+              {/* Book Genre Selection */}
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Book Genre (Optional)
+                </label>
+                {bookGenresLoading ? (
+                  <div className="flex items-center justify-center p-8 border border-gray-200 rounded-lg">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <span className="ml-2 text-gray-600">Loading genres...</span>
+                  </div>
+                ) : (
+                  <div className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50">
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {/* Default "Select a genre" option */}
+                      <div
+                        onClick={() => handleBookGenreChange('')}
+                        className={`px-3 py-2 rounded cursor-pointer transition-colors ${
+                          !formData.genreIds || formData.genreIds.length === 0
+                            ? 'bg-blue-600 text-white'
+                            : 'text-gray-700 hover:bg-blue-100'
+                        }`}
+                      >
+                        Select a genre (optional)
+                      </div>
+                      
+                      {/* Genre options */}
+                      {bookGenres.map((genre) => (
+                        <div
+                          key={genre._id?.toString()}
+                          onClick={() => handleBookGenreChange(genre._id?.toString() || '')}
+                          className={`px-3 py-2 rounded cursor-pointer transition-colors flex items-center ${
+                            formData.genreIds && formData.genreIds.includes(genre._id?.toString() || '')
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 hover:bg-blue-100'
+                          }`}
+                        >
+                          <span className="mr-2">{genre.icon || '📚'}</span>
+                          <span className="flex-1 truncate">{genre.name}</span>
+                          {genre.subGenresCount && genre.subGenresCount > 0 && (
+                            <span className={`ml-2 text-xs flex-shrink-0 ${
+                              formData.genreIds && formData.genreIds.includes(genre._id?.toString() || '')
+                                ? 'text-blue-200'
+                                : 'text-gray-500'
+                            }`}>
+                              {genre.subGenresCount}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <p className="text-sm text-gray-600 mt-2">
+                  Choose a genre to categorize your book
+                </p>
+              </div>
+
+              {/* SubGenre Selection - Only show if genre is selected */}
+              {formData.genreIds && formData.genreIds.length > 0 ? (
+                <div className="md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Sub Genre (Optional)
+                  </label>
+                  {subGenresLoading ? (
+                    <div className="flex items-center justify-center p-8 border border-gray-200 rounded-lg">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span className="ml-2 text-gray-600">Loading subgenres...</span>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {/* Default "Select a sub genre" option */}
+                        <div
+                          onClick={() => handleSubGenreChange('')}
+                          className={`px-3 py-2 rounded cursor-pointer transition-colors ${
+                            !formData.subGenreIds || formData.subGenreIds.length === 0
+                              ? 'bg-gray-600 text-white'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          Select a sub genre (optional)
+                        </div>
+                        
+                        {/* SubGenre options */}
+                        {subGenres.length > 0 ? (
+                          subGenres.map((subgenre) => (
+                            <div
+                              key={subgenre._id?.toString()}
+                              onClick={() => handleSubGenreChange(subgenre._id?.toString() || '')}
+                              className={`px-3 py-2 rounded cursor-pointer transition-colors flex items-center ${
+                                formData.subGenreIds && formData.subGenreIds.includes(subgenre._id?.toString() || '')
+                                  ? 'bg-gray-600 text-white'
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              <span className="mr-2">{subgenre.icon || '📖'}</span>
+                              <span className="flex-1 truncate">{subgenre.name}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-3 py-2 text-gray-500 italic">
+                            No subgenres available for this genre
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-sm text-gray-600 mt-2">
+                    Choose a subgenre for more specific categorization
+                  </p>
+                </div>
+              ) : (
+                /* Empty placeholder div to maintain grid layout */
+                <div className="md:col-span-1"></div>
+              )}
             </div>
           </div>
 
@@ -864,20 +1027,6 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
                 />
               </div>
 
-              {/* Genre */}
-              <div className="md:col-span-2">
-                <label htmlFor="genre" className="block text-sm font-medium text-gray-700 mb-2">
-                  Genres (comma-separated)
-                </label>
-                <input
-                  type="text"
-                  id="genre"
-                  value={formData.genre?.join(', ') || ''}
-                  onChange={(e) => handleGenreChange(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                  placeholder="Fiction, Science, Technology"
-                />
-              </div>
 
               {/* Featured */}
               <div>
