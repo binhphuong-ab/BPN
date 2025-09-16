@@ -4,3 +4,4 @@ export * from './user';
 export * from './comment';
 export * from './topic';
 export * from './book';
+export * from './bookgenre';

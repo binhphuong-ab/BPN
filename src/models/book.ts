@@ -39,7 +39,8 @@ export interface Book {
   
   // Additional metadata
   publishedYear?: number; // Year of publication
-  genre?: string[]; // Book genres/categories
+  genreIds?: ObjectId[]; // References to BookGenre IDs
+  subGenreIds?: ObjectId[]; // References to SubGenre IDs
   pages?: number; // Number of pages
   fileFormat?: string; // File format for ebooks (e.g., "PDF", "EPUB")
   
@@ -57,7 +58,8 @@ export interface Book {
 export interface BookFilter {
   language?: 'English' | 'Vietnamese';
   type?: 'Paper' | 'Ebook' | 'Both';
-  genre?: string;
+  genreId?: ObjectId; // Filter by BookGenre ID
+  subGenreId?: ObjectId; // Filter by SubGenre ID
   author?: string;
   search?: string; // Search in title, author, content
   featured?: boolean;
@@ -226,7 +228,8 @@ export function createBookData(data: Partial<Book>): Omit<Book, '_id' | 'created
     
     // Additional metadata
     publishedYear: data.publishedYear,
-    genre: data.genre || [],
+    genreIds: data.genreIds || [],
+    subGenreIds: data.subGenreIds || [],
     pages: data.pages,
     fileFormat: data.fileFormat,
     

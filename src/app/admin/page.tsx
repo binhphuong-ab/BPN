@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePosts } from '@/hooks/usePosts';
 import { useTopics } from '@/hooks/useTopics';
 import { useBooks } from '@/hooks/useBooks';
+import { useBookGenres } from '@/hooks/useBookGenres';
 
 // Component imports
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -23,9 +24,13 @@ import BooksFilters from '@/components/admin/BooksFilters';
 import BooksBulkActions from '@/components/admin/BooksBulkActions';
 import BooksTable from '@/components/admin/BooksTable';
 import EmptyBooksState from '@/components/admin/EmptyBooksState';
+import BookGenresList from '@/components/admin/BookGenresList';
+import SubGenresList from '@/components/admin/SubGenresList';
+import BookGenreForm from '@/components/admin/BookGenreForm';
+import SubGenreForm from '@/components/admin/SubGenreForm';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
-type Tab = 'posts' | 'topics' | 'books';
+type Tab = 'posts' | 'topics' | 'books' | 'bookgenres';
 
 function AdminDashboard() {
   // Check URL parameters for tab
@@ -37,6 +42,7 @@ function AdminDashboard() {
   const postsHook = usePosts();
   const topicsHook = useTopics();
   const booksHook = useBooks();
+  const bookGenresHook = useBookGenres();
 
   const hasSearchOrFilters = !!(postsHook.filters.search || 
     postsHook.filters.status !== 'all' || 
@@ -70,6 +76,13 @@ function AdminDashboard() {
                 >
                   Add New Book
                 </Link>
+              ) : activeTab === 'bookgenres' ? (
+                <button
+                  onClick={() => bookGenresHook.openBookGenreForm()}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                >
+                  Add Book Genre
+                </button>
               ) : (
                 <Link
                   href="/admin/new"
@@ -137,6 +150,24 @@ function AdminDashboard() {
                   <span>Library Books</span>
                   <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
                     {booksHook.books.length}
+                  </span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('bookgenres')}
+                className={`py-4 px-6 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === 'bookgenres'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <span>Book Genres</span>
+                  <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium">
+                    {bookGenresHook.bookGenres.length}
                   </span>
                 </div>
               </button>
@@ -288,6 +319,95 @@ function AdminDashboard() {
                     <EmptyBooksState hasFilters={hasBooksSearchOrFilters} />
                   )}
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'bookgenres' && (
+              <div key="bookgenres-tab">
+                {bookGenresHook.loading ? (
+                  <LoadingSpinner />
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Book Genres List */}
+                    <BookGenresList
+                      bookGenres={bookGenresHook.bookGenres}
+                      selectedBookGenre={bookGenresHook.selectedBookGenre}
+                      onBookGenreSelect={bookGenresHook.setSelectedBookGenre}
+                      onBookGenreEdit={bookGenresHook.openBookGenreForm}
+                      onBookGenreDelete={bookGenresHook.deleteBookGenre}
+                      onAddBookGenre={() => bookGenresHook.openBookGenreForm()}
+                    />
+
+                    {/* Subgenres List */}
+                    <SubGenresList
+                      key={bookGenresHook.selectedBookGenre?._id?.toString() || 'no-genre'}
+                      subGenres={bookGenresHook.subGenres}
+                      genreName={bookGenresHook.selectedBookGenre?.name}
+                      onSubGenreEdit={bookGenresHook.openSubGenreForm}
+                      onSubGenreDelete={bookGenresHook.deleteSubGenre}
+                      onAddSubGenre={() => bookGenresHook.openSubGenreForm()}
+                      hasSelectedGenre={!!bookGenresHook.selectedBookGenre}
+                      isLoading={bookGenresHook.subGenresLoading}
+                    />
+
+                    {/* Forms Column */}
+                    <div className="space-y-6">
+                      {/* BookGenre Form */}
+                      {bookGenresHook.showBookGenreForm && (
+                        <BookGenreForm
+                          formData={bookGenresHook.bookGenreFormData}
+                          onFormDataChange={bookGenresHook.updateBookGenreForm}
+                          onSubmit={bookGenresHook.editingBookGenre ? bookGenresHook.updateBookGenre : bookGenresHook.createBookGenre}
+                          onCancel={bookGenresHook.closeForms}
+                          isEditing={!!bookGenresHook.editingBookGenre}
+                        />
+                      )}
+
+                      {/* SubGenre Form */}
+                      {bookGenresHook.showSubGenreForm && bookGenresHook.selectedBookGenre && (
+                        <SubGenreForm
+                          formData={bookGenresHook.subGenreFormData}
+                          onFormDataChange={bookGenresHook.updateSubGenreForm}
+                          onSubmit={bookGenresHook.editingSubGenre ? bookGenresHook.updateSubGenre : bookGenresHook.createSubGenre}
+                          onCancel={bookGenresHook.closeForms}
+                          isEditing={!!bookGenresHook.editingSubGenre}
+                          genreName={bookGenresHook.selectedBookGenre.name}
+                        />
+                      )}
+
+                      {/* Empty state when no forms are shown */}
+                      {!bookGenresHook.showBookGenreForm && !bookGenresHook.showSubGenreForm && (
+                        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                          <div className="text-gray-400 mb-4">
+                            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                          </div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">Book Genre Management</h3>
+                          <p className="text-gray-500 mb-4">
+                            Create and organize book genres and their subgenres to categorize your library.
+                          </p>
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => bookGenresHook.openBookGenreForm()}
+                              className="block w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                            >
+                              Create New Genre
+                            </button>
+                            {bookGenresHook.selectedBookGenre && (
+                              <button
+                                onClick={() => bookGenresHook.openSubGenreForm()}
+                                className="block w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                              >
+                                Add Subgenre to &quot;{bookGenresHook.selectedBookGenre.name}&quot;
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
