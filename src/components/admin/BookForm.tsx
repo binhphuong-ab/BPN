@@ -867,15 +867,15 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
                     <span className="ml-2 text-gray-600">Loading genres...</span>
                   </div>
                 ) : (
-                  <div className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50">
+                  <div className="border-2 border-gray-300 rounded-lg p-4 bg-gray-50">
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                       {/* Default "Select a genre" option */}
                       <div
                         onClick={() => handleBookGenreChange('')}
                         className={`px-3 py-2 rounded cursor-pointer transition-colors ${
                           !formData.genreIds || formData.genreIds.length === 0
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-700 hover:bg-blue-100'
+                            ? 'bg-gray-600 text-white'
+                            : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         Select a genre (optional)
@@ -888,8 +888,8 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
                           onClick={() => handleBookGenreChange(genre._id?.toString() || '')}
                           className={`px-3 py-2 rounded cursor-pointer transition-colors flex items-center ${
                             formData.genreIds && formData.genreIds.includes(genre._id?.toString() || '')
-                              ? 'bg-blue-600 text-white'
-                              : 'text-gray-700 hover:bg-blue-100'
+                              ? 'bg-gray-600 text-white'
+                              : 'text-gray-700 hover:bg-gray-100'
                           }`}
                         >
                           <span className="mr-2">{genre.icon || '📚'}</span>
@@ -897,7 +897,7 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
                           {genre.subGenresCount && genre.subGenresCount > 0 && (
                             <span className={`ml-2 text-xs flex-shrink-0 ${
                               formData.genreIds && formData.genreIds.includes(genre._id?.toString() || '')
-                                ? 'text-blue-200'
+                                ? 'text-gray-200'
                                 : 'text-gray-500'
                             }`}>
                               {genre.subGenresCount}
