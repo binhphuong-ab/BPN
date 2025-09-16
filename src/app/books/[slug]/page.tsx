@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { LibraryService } from '@/lib/library-service';
-import { Book, isBookDownloadable, getPrimaryCoverImage, getGalleryImages } from '@/models/book';
+import { Book, isBookDownloadable, getPrimaryCoverImage, getGalleryImages, getPrimaryDownload } from '@/models/book';
 import { ReadingProgress } from '@/components/ReadingProgress';
 import BookCard from '@/components/BookCard';
 
@@ -52,19 +52,21 @@ export async function generateMetadata({ params }: BookPageProps): Promise<Metad
 
 // Download handler component
 function DownloadButton({ book }: { book: Book }) {
+  const primaryDownload = getPrimaryDownload(book);
+  
   const handleDownload = async () => {
     try {
       await fetch(`/api/books/${book._id}/download`, {
         method: 'POST',
       });
       
-      if (book.downloadUrl) {
-        window.open(book.downloadUrl, '_blank');
+      if (primaryDownload?.url) {
+        window.open(primaryDownload.url, '_blank');
       }
     } catch (error) {
       console.error('Error tracking download:', error);
-      if (book.downloadUrl) {
-        window.open(book.downloadUrl, '_blank');
+      if (primaryDownload?.url) {
+        window.open(primaryDownload.url, '_blank');
       }
     }
   };
@@ -315,7 +317,7 @@ export default async function BookPage({ params }: BookPageProps) {
               )}
 
               {/* Book Details */}
-              {(book.fileFormat || book.pages || book.downloadUrl) && (
+              {(book.fileFormat || book.pages || (book.downloads && book.downloads.length > 0)) && (
                 <div className="mt-8 bg-white rounded-xl shadow-sm border p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Book Details</h3>
                   <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">

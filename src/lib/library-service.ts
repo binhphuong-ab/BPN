@@ -162,7 +162,7 @@ export class LibraryService {
       { 
         _id: new ObjectId(bookId),
         $or: [{ type: 'Ebook' }, { type: 'Both' }],
-        downloadUrl: { $exists: true, $ne: '', $type: 'string' }
+        downloads: { $exists: true, $not: { $size: 0 } }
       },
       { 
         $inc: { downloadCount: 1 },

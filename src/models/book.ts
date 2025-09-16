@@ -17,13 +17,21 @@ export interface BookImage {
   featured: boolean; // Whether this is a featured image
 }
 
+// Book Download interface for multiple download files
+export interface BookDownload {
+  id: string; // Unique identifier for the download
+  name: string; // Display name for the download (e.g., "PDF Version", "EPUB Format")
+  url: string; // Download URL or relative path
+  order: number; // Display order
+}
+
 export interface Book {
   _id?: ObjectId;
   title: string;
   slug: string;
   images?: BookImage[]; // Multiple images (cover, gallery, content images)
   content?: string; // Main content/description in markdown format
-  downloadUrl?: string; // URL for ebook download
+  downloads?: BookDownload[]; // Multiple download files with names and URLs
   author?: string; // Book author(s)
   publisher?: string; // Publishing company
   language: 'English' | 'Vietnamese'; // Book language
@@ -78,16 +86,41 @@ export function extractBookSummary(content: string, maxLength: number = 200): st
   return plainText.substring(0, maxLength).replace(/\s+\S*$/, '') + '...';
 }
 
-// Helper function to validate download URL
-export function validateDownloadUrl(url?: string): boolean {
-  if (!url) return true; // URL is optional
+// Helper function to validate download URLs (both relative and external)
+export function validateDownloadUrl(url: string): boolean {
+  if (!url.trim()) return false;
   
+  // Check if it's a valid absolute URL
   try {
     new URL(url);
     return true;
   } catch {
-    return false;
+    // Allow relative URLs (starting with /) for local files
+    return url.startsWith('/') && !url.includes('..');
   }
+}
+
+// Helper function to validate all downloads
+export function validateDownloads(downloads?: BookDownload[]): boolean {
+  if (!downloads || downloads.length === 0) return true;
+  
+  return downloads.every(download => {
+    return download.name.trim().length > 0 && validateDownloadUrl(download.url);
+  });
+}
+
+// Helper functions for managing multiple downloads
+export function createBookDownload(
+  name: string,
+  url: string,
+  order: number = 0
+): BookDownload {
+  return {
+    id: generateDownloadId(),
+    name: name.trim(),
+    url: url.trim(),
+    order,
+  };
 }
 
 // Helper functions for managing multiple images
@@ -108,6 +141,11 @@ export function createBookImage(
 
 // Generate unique image ID
 function generateImageId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// Generate unique download ID
+function generateDownloadId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
@@ -163,7 +201,14 @@ export function migrateOldImageFormat(oldImage?: string): BookImage[] {
 
 // Helper function to check if book is downloadable
 export function isBookDownloadable(book: Book): boolean {
-  return (book.type === 'Ebook' || book.type === 'Both') && !!book.downloadUrl;
+  return (book.type === 'Ebook' || book.type === 'Both') && 
+         Boolean(book.downloads && book.downloads.length > 0);
+}
+
+// Helper function to get primary download (first one)
+export function getPrimaryDownload(book: Book): BookDownload | undefined {
+  if (!book.downloads || book.downloads.length === 0) return undefined;
+  return book.downloads.sort((a, b) => a.order - b.order)[0];
 }
 
 // Helper function to create book data with defaults
@@ -173,7 +218,7 @@ export function createBookData(data: Partial<Book>): Omit<Book, '_id' | 'created
     slug: data.slug || generateBookSlug(data.title || ''),
     images: data.images || [],
     content: data.content,
-    downloadUrl: data.downloadUrl,
+    downloads: data.downloads || [],
     author: data.author,
     publisher: data.publisher,
     language: data.language || 'English',

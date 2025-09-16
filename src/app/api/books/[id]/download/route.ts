@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LibraryService } from '@/lib/library-service';
+import { getPrimaryDownload } from '@/models/book';
 
 interface RouteContext {
   params: { id: string };
@@ -20,14 +21,21 @@ export async function POST(
       );
     }
 
+    const primaryDownload = getPrimaryDownload(book);
+    
     return NextResponse.json({
       message: 'Download tracked successfully',
-      downloadUrl: book.downloadUrl,
+      downloadUrl: primaryDownload?.url || null,
+      download: primaryDownload ? {
+        name: primaryDownload.name,
+        url: primaryDownload.url,
+      } : null,
       book: {
         id: book._id,
         title: book.title,
         author: book.author,
         downloadCount: book.downloadCount,
+        totalDownloads: book.downloads?.length || 0,
       },
     });
   } catch (error) {

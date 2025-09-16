@@ -74,15 +74,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate download URL if provided
-    if (bookData.downloadUrl) {
-      try {
-        new URL(bookData.downloadUrl);
-      } catch {
-        return NextResponse.json(
-          { error: 'Invalid download URL format' },
-          { status: 400 }
-        );
+    // Validate downloads if provided
+    if (bookData.downloads && bookData.downloads.length > 0) {
+      for (const download of bookData.downloads) {
+        if (!download.name || !download.name.trim()) {
+          return NextResponse.json(
+            { error: 'Download name is required for all downloads' },
+            { status: 400 }
+          );
+        }
+        
+        if (!download.url || !download.url.trim()) {
+          return NextResponse.json(
+            { error: 'Download URL is required for all downloads' },
+            { status: 400 }
+          );
+        }
+
+        // Validate URL format (both relative and absolute)
+        if (!download.url.startsWith('/') && !download.url.startsWith('http')) {
+          return NextResponse.json(
+            { error: 'Download URL must be either a relative path (/documents/...) or a full URL (https://...)' },
+            { status: 400 }
+          );
+        }
+
+        // For absolute URLs, validate format
+        if (download.url.startsWith('http')) {
+          try {
+            new URL(download.url);
+          } catch {
+            return NextResponse.json(
+              { error: 'Invalid download URL format' },
+              { status: 400 }
+            );
+          }
+        }
       }
     }
     
