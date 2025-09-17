@@ -1,4 +1,11 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Book Not Found | Personal Library',
+  description: 'The book you are looking for could not be found in our library.',
+  robots: 'noindex, nofollow', // Don't index 404 pages
+};
 
 export default function NotFound() {
   return (
