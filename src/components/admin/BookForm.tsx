@@ -262,13 +262,8 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
           setDownloadInputs(bookDownloadInputs);
         }
 
-        // Set selected genre if book has one
-        if (book.genreIds && book.genreIds.length > 0) {
-          const genre = bookGenres.find(g => g._id?.toString() === book.genreIds![0]?.toString());
-          if (genre) {
-            setSelectedBookGenre(genre);
-          }
-        }
+        // Note: Don't set selected genre here - do it in a separate effect
+        // when both book data and genres are available
       } else if (response.status === 404) {
         showError('Book not found');
         router.push('/admin?tab=books');
@@ -283,13 +278,23 @@ export default function BookForm({ mode, bookId, onCancel }: BookFormProps) {
     } finally {
       setLoading(false);
     }
-  }, [mode, bookId, showError, router, bookGenres, setSelectedBookGenre]);
+  }, [mode, bookId, showError, router]); // Removed bookGenres and setSelectedBookGenre dependencies
 
   useEffect(() => {
     if (mode === 'edit') {
       fetchBook();
     }
   }, [fetchBook, mode]);
+
+  // Set selected genre when both book data and genres are available
+  useEffect(() => {
+    if (mode === 'edit' && formData.genreIds && formData.genreIds.length > 0 && bookGenres.length > 0) {
+      const genre = bookGenres.find(g => g._id?.toString() === formData.genreIds![0]);
+      if (genre) {
+        setSelectedBookGenre(genre);
+      }
+    }
+  }, [mode, formData.genreIds, bookGenres, setSelectedBookGenre]);
 
   const handleInputChange = (field: keyof Book, value: unknown) => {
     setFormData(prev => ({

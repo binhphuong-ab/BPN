@@ -23,15 +23,26 @@ export async function GET(request: NextRequest) {
     const queryTime = Date.now() - startTime;
     console.log(`⚡ BookGenres API completed in ${queryTime}ms, returned ${genres.length} genres`);
 
-    // Create response with caching headers
+    // Create response with conditional caching headers
     const response = NextResponse.json({
       genres,
       queryTime,
       total: genres.length
     });
 
-    // Cache genres for longer since they change less frequently (10 minutes)
-    response.headers.set('Cache-Control', 'public, max-age=600, stale-while-revalidate=300');
+    // Check if this is a cache-busting request
+    const url = new URL(request.url);
+    const isCacheBusting = url.searchParams.has('_t');
+    
+    if (isCacheBusting) {
+      // No caching for cache-busting requests
+      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+    } else {
+      // Short cache for normal requests (1 minute instead of 10)
+      response.headers.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=30');
+    }
     response.headers.set('X-Query-Time', `${queryTime}ms`);
 
     return response;

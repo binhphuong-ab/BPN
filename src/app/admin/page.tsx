@@ -336,6 +336,7 @@ function AdminDashboard() {
                       onBookGenreEdit={bookGenresHook.openBookGenreForm}
                       onBookGenreDelete={bookGenresHook.deleteBookGenre}
                       onAddBookGenre={() => bookGenresHook.openBookGenreForm()}
+                      onRefresh={bookGenresHook.refreshBookGenres}
                     />
 
                     {/* Subgenres List */}

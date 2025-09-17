@@ -83,11 +83,18 @@ export function useBookGenres(): UseBookGenres {
   const refreshBookGenres = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/bookgenres');
+      // Add cache-busting parameter to ensure fresh data
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/bookgenres?_t=${timestamp}`, {
+        cache: 'no-store', // Prevent client-side caching
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       
       if (response.ok) {
         const data = await response.json();
-        setBookGenres(data);
+        setBookGenres(data.genres || []);
       } else {
         const errorText = await response.text();
         console.error('Failed to fetch book genres. Status:', response.status, 'Error:', errorText);
@@ -183,8 +190,8 @@ export function useBookGenres(): UseBookGenres {
       });
 
       if (response.ok) {
-        const newBookGenre = await response.json();
-        setBookGenres(prev => [...prev, { ...newBookGenre, subGenresCount: 0 }]);
+        // Refresh data from server instead of manually updating state
+        await refreshBookGenres();
         closeForms();
         ErrorHandler.showSuccess(`Book genre "${data.name}" created successfully`);
       } else {
@@ -212,7 +219,7 @@ export function useBookGenres(): UseBookGenres {
       }
       throw error;
     }
-  }, [closeForms]);
+  }, [closeForms, refreshBookGenres]);
 
   const updateBookGenre = useCallback(async (data: BookGenreFormData) => {
     if (!editingBookGenre) return;
@@ -225,17 +232,8 @@ export function useBookGenres(): UseBookGenres {
       });
 
       if (response.ok) {
-        const updatedBookGenre = await response.json();
-        setBookGenres(prev => prev.map(bg => 
-          bg._id?.toString() === editingBookGenre._id?.toString() 
-            ? { ...updatedBookGenre, subGenresCount: bg.subGenresCount }
-            : bg
-        ));
-        
-        if (selectedBookGenre?._id?.toString() === editingBookGenre._id?.toString()) {
-          setSelectedBookGenreState({ ...updatedBookGenre, subGenresCount: selectedBookGenre?.subGenresCount || 0 });
-        }
-        
+        // Refresh data from server instead of manually updating state
+        await refreshBookGenres();
         closeForms();
         ErrorHandler.showSuccess(`Book genre "${data.name}" updated successfully`);
       } else {
@@ -246,7 +244,7 @@ export function useBookGenres(): UseBookGenres {
       ErrorHandler.showError('Failed to update book genre');
       throw error;
     }
-  }, [editingBookGenre, selectedBookGenre, closeForms]);
+  }, [editingBookGenre, selectedBookGenre, closeForms, refreshBookGenres]);
 
   const deleteBookGenre = useCallback(async (bookGenre: BookGenreWithCount) => {
     await ErrorHandler.handleAsyncOperation(async () => {
@@ -258,13 +256,16 @@ export function useBookGenres(): UseBookGenres {
         throw new Error('Failed to delete book genre');
       }
 
-      setBookGenres(prev => prev.filter(bg => bg._id?.toString() !== bookGenre._id?.toString()));
+      // Clear selection if we're deleting the selected genre
       if (selectedBookGenre?._id?.toString() === bookGenre._id?.toString()) {
         setSelectedBookGenreState(null);
       }
+      
+      // Refresh data from server instead of manually updating state
+      await refreshBookGenres();
       ErrorHandler.showSuccess(`Book genre "${bookGenre.name}" and all its subgenres deleted successfully`);
     }, 'Failed to delete book genre');
-  }, [selectedBookGenre]);
+  }, [selectedBookGenre, refreshBookGenres]);
 
   // SubGenre CRUD operations
   const createSubGenre = useCallback(async (data: SubGenreFormData) => {
