@@ -6,6 +6,11 @@ import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
  * 
  * This model manages book genres and their subgenres for better organization
  * and categorization of books in the library system.
+ * 
+ * MONGODB INDEXES FOR PERFORMANCE:
+ * - db.bookgenres.createIndex({ "order": 1 }) // For ordered listing
+ * - db.bookgenres.createIndex({ "featured": 1, "order": 1 }) // For featured genres
+ * - db.subgenres.createIndex({ "genreId": 1, "order": 1 }) // For subgenres by genre
  */
 
 export interface BookGenre {
@@ -39,6 +44,10 @@ export interface SubGenre {
 
 export interface BookGenreWithCount extends BookGenre {
   subGenresCount: number;
+}
+
+export interface BookGenreWithSubGenres extends BookGenre {
+  subGenres: SubGenre[];
 }
 
 // Filter interface for filtering genres

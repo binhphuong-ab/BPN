@@ -6,6 +6,14 @@ import { generateVietnameseSlug } from '@/utils/vietnamese-slug-generating';
  * 
  * This model represents books for display and download purposes only.
  * No borrowing system - just a showcase of available books.
+ * 
+ * MONGODB INDEXES FOR PERFORMANCE:
+ * - db.books.createIndex({ "genreIds": 1 }) // For genre filtering
+ * - db.books.createIndex({ "subGenreIds": 1 }) // For subgenre filtering  
+ * - db.books.createIndex({ "genreIds": 1, "language": 1 }) // Compound for genre + language
+ * - db.books.createIndex({ "subGenreIds": 1, "language": 1 }) // Compound for subgenre + language
+ * - db.books.createIndex({ "featured": 1, "createdAt": -1 }) // For featured books
+ * - db.books.createIndex({ "language": 1, "type": 1 }) // For basic filters
  */
 
 // Book Image interface for multiple image support

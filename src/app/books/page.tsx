@@ -1,22 +1,96 @@
-import { LibraryService } from '@/lib/library-service';
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
 import BookCard from '@/components/BookCard';
+import BookGenreFilter from '@/components/BookGenreFilter';
 import Link from 'next/link';
+import { Book } from '@/models/book';
 
-export const metadata = {
-  title: 'Books | Personal Library',
-  description: 'Browse my personal collection of books on rationality, math, business and more',
-  keywords: ['books', 'library', 'rationality', 'math', 'business', 'reading'],
-};
+interface LibraryStats {
+  totalBooks: number;
+  totalEbooks: number;
+  totalPaperBooks: number;
+  totalDownloads: number;
+}
 
-export default async function BooksPage() {
-  // Fetch books and stats
-  const [booksResult, libraryStats, featuredBooks] = await Promise.all([
-    LibraryService.getBooks({}, 1, 50), // Get more books for the main listing
-    LibraryService.getLibraryStats(),
-    LibraryService.getFeaturedBooks(6)
-  ]);
+export default function BooksPage() {
+  const [books, setBooks] = useState<Book[]>([]);
+  const [allBooks, setAllBooks] = useState<Book[]>([]); // Keep original books for reference
+  const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
+  const [libraryStats, setLibraryStats] = useState<LibraryStats>({
+    totalBooks: 0,
+    totalEbooks: 0,
+    totalPaperBooks: 0,
+    totalDownloads: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const { books } = booksResult;
+
+  // Initial data fetch
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch all initial data - OPTIMIZED with performance logging
+        const startTime = Date.now();
+        const [booksResponse, statsResponse, featuredResponse] = await Promise.all([
+          fetch('/api/books?limit=50'),
+          fetch('/api/library/stats'),
+          fetch('/api/books?featured=true&limit=6')
+        ]);
+
+        if (booksResponse.ok) {
+          const booksData = await booksResponse.json();
+          setBooks(booksData.books);
+          setAllBooks(booksData.books);
+          
+          const loadTime = Date.now() - startTime;
+          console.log(`⚡ Initial books loaded in ${loadTime}ms (API: ${booksData.queryTime || 'N/A'}ms)`);
+        }
+
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setLibraryStats(statsData);
+        }
+
+        if (featuredResponse.ok) {
+          const featuredData = await featuredResponse.json();
+          setFeaturedBooks(featuredData.books);
+        }
+      } catch (error) {
+        console.error('Error fetching initial data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
+
+  // Handle books update from genre filter
+  const handleBooksUpdate = useCallback((filteredBooks: Book[]) => {
+    // Always set the books to what the filter returned
+    // If empty, show empty state - don't fallback to all books
+    setBooks(filteredBooks);
+  }, []);
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500">
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading library...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -75,15 +149,20 @@ export default async function BooksPage() {
         </section>
       )}
 
+      {/* Genre Filter Section */}
+      <BookGenreFilter 
+        onBooksUpdate={handleBooksUpdate}
+      />
+
       {/* All Books Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Browse All Books
+              Browse Books
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Explore the complete collection organized by topics and interests
+              Explore books from the collection, or use the filters above to narrow your search
             </p>
           </div>
 
@@ -95,10 +174,13 @@ export default async function BooksPage() {
                 ))}
               </div>
               
-              {/* Browse More */}
+              {/* Results Summary */}
               <div className="text-center mt-12">
                 <p className="text-gray-600 mb-6">
-                  Showing {books.length} of {libraryStats.totalBooks} books
+                  Showing {books.length} book{books.length !== 1 ? 's' : ''}
+                  {books.length !== allBooks.length && allBooks.length > 0 && (
+                    <span> (filtered from {libraryStats.totalBooks} total)</span>
+                  )}
                 </p>
                 {books.length >= 50 && (
                   <Link
@@ -140,52 +222,20 @@ export default async function BooksPage() {
                   />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No books available yet</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {allBooks.length > 0 ? 'No books match your filters' : 'No books available yet'}
+              </h3>
               <p className="text-gray-500">
-                The library is being updated. Check back soon for new additions!
+                {allBooks.length > 0 
+                  ? 'Try selecting different genres or subgenres to find books.'
+                  : 'The library is being updated. Check back soon for new additions!'
+                }
               </p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Explore by Category
-            </h2>
-            <p className="text-lg text-gray-600">
-              Find books that match your interests and learning goals
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[
-              { name: 'Rationality', icon: '🧠', color: 'bg-blue-100 text-blue-800' },
-              { name: 'Mathematics', icon: '📊', color: 'bg-green-100 text-green-800' },
-              { name: 'Business', icon: '💼', color: 'bg-purple-100 text-purple-800' },
-              { name: 'Philosophy', icon: '🤔', color: 'bg-yellow-100 text-yellow-800' },
-              { name: 'Science', icon: '🔬', color: 'bg-red-100 text-red-800' },
-              { name: 'Technology', icon: '💻', color: 'bg-indigo-100 text-indigo-800' },
-              { name: 'Psychology', icon: '🧭', color: 'bg-pink-100 text-pink-800' },
-              { name: 'History', icon: '📜', color: 'bg-orange-100 text-orange-800' },
-            ].map((category) => (
-              <Link
-                key={category.name}
-                href={`/books?category=${encodeURIComponent(category.name)}`}
-                className={`p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-all hover:scale-105 ${category.color} group`}
-              >
-                <div className="text-center">
-                  <div className="text-2xl mb-2">{category.icon}</div>
-                  <div className="font-medium text-sm">{category.name}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

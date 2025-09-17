@@ -3,11 +3,15 @@ import { BookGenreService } from '@/lib/bookgenre-service';
 import { BookGenre } from '@/models/bookgenre';
 import { verifyToken } from '@/lib/auth-utils';
 
-// GET /api/bookgenres - Get all book genres
+// GET /api/bookgenres - Get all book genres (OPTIMIZED)
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     const { searchParams } = new URL(request.url);
     const featured = searchParams.get('featured') === 'true';
+
+    console.log('📊 BookGenres API called with featured:', featured);
 
     let genres;
     if (featured) {
@@ -16,9 +20,23 @@ export async function GET(request: NextRequest) {
       genres = await BookGenreService.getAllBookGenres();
     }
 
-    return NextResponse.json(genres);
+    const queryTime = Date.now() - startTime;
+    console.log(`⚡ BookGenres API completed in ${queryTime}ms, returned ${genres.length} genres`);
+
+    // Create response with caching headers
+    const response = NextResponse.json({
+      genres,
+      queryTime,
+      total: genres.length
+    });
+
+    // Cache genres for longer since they change less frequently (10 minutes)
+    response.headers.set('Cache-Control', 'public, max-age=600, stale-while-revalidate=300');
+    response.headers.set('X-Query-Time', `${queryTime}ms`);
+
+    return response;
   } catch (error) {
-    console.error('Error fetching book genres:', error);
+    console.error('❌ Error fetching book genres:', error);
     return NextResponse.json(
       { error: 'Failed to fetch book genres' },
       { status: 500 }

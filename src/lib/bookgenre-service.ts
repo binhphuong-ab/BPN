@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { getDatabase } from './mongodb';
-import { BookGenre, SubGenre, BookGenreWithCount } from '@/models/bookgenre';
+import { BookGenre, SubGenre, BookGenreWithCount, BookGenreWithSubGenres } from '@/models/bookgenre';
 
 export class BookGenreService {
   private static async getBookGenresCollection() {
@@ -78,6 +78,37 @@ export class BookGenreService {
     );
 
     return genresWithCount;
+  }
+
+  // OPTIMIZED: Get all book genres with their actual subgenres in a single aggregation query
+  static async getAllBookGenresWithSubGenres(featuredOnly: boolean = false): Promise<BookGenreWithSubGenres[]> {
+    const genresCollection = await this.getBookGenresCollection();
+    
+    const matchStage = featuredOnly ? { featured: true } : {};
+    
+    const pipeline = [
+      { $match: matchStage },
+      {
+        $lookup: {
+          from: 'subgenres',
+          localField: '_id',
+          foreignField: 'genreId',
+          as: 'subGenres',
+          pipeline: [
+            { $sort: { order: 1, name: 1 } }
+          ]
+        }
+      },
+      {
+        $sort: { order: 1, createdAt: 1 }
+      }
+    ];
+
+    const genresWithSubGenres = await genresCollection.aggregate(pipeline).toArray() as BookGenreWithSubGenres[];
+    
+    console.log(`🔍 Aggregation returned ${genresWithSubGenres.length} genres with embedded subgenres`);
+    
+    return genresWithSubGenres;
   }
 
   // Get featured book genres for public use

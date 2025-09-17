@@ -101,7 +101,17 @@ export class LibraryService {
     }
 
     if (filter.genreId) {
-      mongoFilter.genreIds = { $in: [filter.genreId] };
+      // Handle both string and ObjectId formats for compatibility
+      mongoFilter.genreIds = { 
+        $in: [filter.genreId, filter.genreId.toString()] 
+      };
+    }
+
+    if (filter.subGenreId) {
+      // Handle both string and ObjectId formats for compatibility
+      mongoFilter.subGenreIds = { 
+        $in: [filter.subGenreId, filter.subGenreId.toString()] 
+      };
     }
 
     if (filter.author) {
@@ -121,14 +131,43 @@ export class LibraryService {
       ];
     }
 
+    // Optimized projection - only select fields needed for book cards and list view
+    const projection = {
+      _id: 1,
+      title: 1,
+      slug: 1,
+      author: 1,
+      language: 1,
+      type: 1,
+      summary: 1,
+      featured: 1,
+      genreIds: 1,
+      subGenreIds: 1,
+      publishedYear: 1,
+      pages: 1,
+      images: { $slice: 1 }, // Only get the first image for card display
+      downloads: { $slice: 1 }, // Only get the first download for quick access check
+      downloadCount: 1,
+      createdAt: 1
+    };
+
+    console.log('🔍 MongoDB query:', JSON.stringify(mongoFilter));
+    const queryStartTime = Date.now();
+
+    // Optimize sort - featured books first, then by creation date
     const books = await collection
       .find(mongoFilter)
-      .sort({ createdAt: -1 })
+      .project(projection)
+      .sort({ featured: -1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .toArray();
+      .toArray() as Book[];
 
     const total = await collection.countDocuments(mongoFilter);
+    const queryTime = Date.now() - queryStartTime;
+    
+    console.log(`⚡ Database query completed in ${queryTime}ms, found ${books.length}/${total} books`);
+
     const hasMore = skip + books.length < total;
 
     return { books, total, hasMore };

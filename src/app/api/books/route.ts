@@ -4,8 +4,10 @@ import { Book, BookFilter, validateImageUrls } from '@/models/book';
 import { verifyToken } from '@/lib/auth-utils';
 import { ObjectId } from 'mongodb';
 
-// GET /api/books - Get all books with filtering and pagination
+// GET /api/books - Get all books with filtering and pagination (OPTIMIZED)
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -14,22 +16,43 @@ export async function GET(request: NextRequest) {
     const language = searchParams.get('language') as 'English' | 'Vietnamese' | null;
     const type = searchParams.get('type') as 'Paper' | 'Ebook' | 'Both' | null;
     const genre = searchParams.get('genre');
+    const subGenre = searchParams.get('subGenre');
     const author = searchParams.get('author');
     const featured = searchParams.get('featured') === 'true' ? true : undefined;
 
+    // Build filter object
     const filter: BookFilter = {};
     if (search) filter.search = search;
     if (language) filter.language = language;
     if (type) filter.type = type;
     if (genre) filter.genreId = new ObjectId(genre);
+    if (subGenre) filter.subGenreId = new ObjectId(subGenre);
     if (author) filter.author = author;
     if (featured !== undefined) filter.featured = featured;
 
-    const result = await LibraryService.getBooks(filter, page, limit);
+    console.log('📊 Books API Filter:', JSON.stringify(filter));
 
-    return NextResponse.json(result);
+    const result = await LibraryService.getBooks(filter, page, limit);
+    
+    const queryTime = Date.now() - startTime;
+    console.log(`⚡ Books API completed in ${queryTime}ms, returned ${result.books.length} books`);
+
+    // Create response with caching headers for better performance
+    const response = NextResponse.json({
+      ...result,
+      queryTime // Include performance metrics
+    });
+
+    // Add caching headers (cache for 2 minutes for filtered results, 5 minutes for unfiltered)
+    const hasFilters = Object.keys(filter).length > 0;
+    const cacheMaxAge = hasFilters ? 120 : 300; // 2 or 5 minutes
+    
+    response.headers.set('Cache-Control', `public, max-age=${cacheMaxAge}, stale-while-revalidate=60`);
+    response.headers.set('X-Query-Time', `${queryTime}ms`);
+
+    return response;
   } catch (error) {
-    console.error('Error fetching books:', error);
+    console.error('❌ Error fetching books:', error);
     return NextResponse.json(
       { error: 'Failed to fetch books' },
       { status: 500 }
