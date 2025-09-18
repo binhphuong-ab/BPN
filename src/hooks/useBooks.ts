@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Book } from '@/models/book';
+import { useToast } from '@/contexts/ToastContext';
 
 interface BookFilters {
   search: string;
@@ -8,6 +9,7 @@ interface BookFilters {
 }
 
 export function useBooks() {
+  const { showSuccess, showError } = useToast();
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,9 +78,13 @@ export function useBooks() {
       if (response.ok) {
         setBooks(prev => prev.filter(book => book._id?.toString() !== id));
         setSelectedBooks(prev => prev.filter(bookId => bookId !== id));
+        showSuccess('Book deleted successfully');
+      } else {
+        throw new Error('Failed to delete book');
       }
     } catch (error) {
       console.error('Error deleting book:', error);
+      showError('Failed to delete book');
     }
   };
 
@@ -102,9 +108,13 @@ export function useBooks() {
         setBooks(prev =>
           prev.map(b => (b._id?.toString() === id ? updatedBook : b))
         );
+        showSuccess(`Book ${updatedBook.featured ? 'featured' : 'unfeatured'} successfully`);
+      } else {
+        throw new Error('Failed to update book');
       }
     } catch (error) {
       console.error('Error updating book:', error);
+      showError('Failed to update book');
     }
   };
 
@@ -131,47 +141,82 @@ export function useBooks() {
 
   // Bulk delete
   const bulkDelete = async () => {
-    const deletePromises = selectedBooks.map(id => deleteBook(id));
-    await Promise.all(deletePromises);
-    setSelectedBooks([]);
+    try {
+      const deletePromises = selectedBooks.map(async (id) => {
+        const response = await fetch(`/api/books/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('admin-token')}`,
+          },
+        });
+        return response.ok;
+      });
+      
+      const results = await Promise.all(deletePromises);
+      const successCount = results.filter(Boolean).length;
+      
+      if (successCount > 0) {
+        setBooks(prev => prev.filter(book => !selectedBooks.includes(book._id?.toString() || '')));
+        showSuccess(`${successCount} book${successCount === 1 ? '' : 's'} deleted successfully`);
+      }
+      
+      if (successCount < selectedBooks.length) {
+        showError(`Failed to delete ${selectedBooks.length - successCount} book${selectedBooks.length - successCount === 1 ? '' : 's'}`);
+      }
+      
+      setSelectedBooks([]);
+    } catch (error) {
+      console.error('Error in bulk delete:', error);
+      showError('Failed to delete books');
+    }
   };
 
   // Bulk toggle featured
   const bulkToggleFeatured = async (featured: boolean) => {
-    const updatePromises = selectedBooks.map(async (id) => {
-      try {
-        const response = await fetch(`/api/books/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('admin-token')}`,
-          },
-          body: JSON.stringify({ featured }),
-        });
+    try {
+      const updatePromises = selectedBooks.map(async (id) => {
+        try {
+          const response = await fetch(`/api/books/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('admin-token')}`,
+            },
+            body: JSON.stringify({ featured }),
+          });
 
-        if (response.ok) {
-          const updatedBook = await response.json();
-          return updatedBook;
+          if (response.ok) {
+            const updatedBook = await response.json();
+            return updatedBook;
+          }
+        } catch (error) {
+          console.error('Error updating book:', error);
         }
-      } catch (error) {
-        console.error('Error updating book:', error);
+        return null;
+      });
+
+      const results = await Promise.all(updatePromises);
+      const validResults = results.filter(Boolean);
+
+      if (validResults.length > 0) {
+        setBooks(prev =>
+          prev.map(book => {
+            const updated = validResults.find(r => r._id === book._id?.toString());
+            return updated || book;
+          })
+        );
+        showSuccess(`${validResults.length} book${validResults.length === 1 ? '' : 's'} ${featured ? 'featured' : 'unfeatured'} successfully`);
       }
-      return null;
-    });
 
-    const results = await Promise.all(updatePromises);
-    const validResults = results.filter(Boolean);
+      if (validResults.length < selectedBooks.length) {
+        showError(`Failed to update ${selectedBooks.length - validResults.length} book${selectedBooks.length - validResults.length === 1 ? '' : 's'}`);
+      }
 
-    if (validResults.length > 0) {
-      setBooks(prev =>
-        prev.map(book => {
-          const updated = validResults.find(r => r._id === book._id?.toString());
-          return updated || book;
-        })
-      );
+      setSelectedBooks([]);
+    } catch (error) {
+      console.error('Error in bulk toggle featured:', error);
+      showError('Failed to update books');
     }
-
-    setSelectedBooks([]);
   };
 
   useEffect(() => {
