@@ -126,7 +126,7 @@ export default function BookGenreForm({
             <button
               type="button"
               onClick={() => onFormDataChange({ color: generateRandomGenreColor() })}
-              className="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 rounded border disabled:opacity-50"
+              className="px-3 py-2 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 rounded border border-gray-300 disabled:opacity-50 font-medium"
               disabled={isSubmitting}
             >
               Random
