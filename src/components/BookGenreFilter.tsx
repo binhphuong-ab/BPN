@@ -213,17 +213,6 @@ function BookGenreFilter({ onBooksUpdate }: BookGenreFilterProps) {
     }
   }, [selectedSubGenreId, fetchFilteredBooks]);
 
-  // Clear all filters
-  const clearFilters = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      selectedGenreId: null,
-      selectedSubGenreId: null,
-    }));
-    
-    fetchFilteredBooks(); // Fetch all books
-  }, [fetchFilteredBooks]);
-
   // Retry mechanism for failed requests
   const handleRetry = useCallback(() => {
     window.location.reload(); // Simple retry by reloading component
