@@ -351,7 +351,7 @@ function BookGenreFilter({ onBooksUpdate }: BookGenreFilterProps) {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-semibold text-gray-900 truncate">{genre.name}</h3>
                     <p className="text-sm text-gray-500">
-                      {genre.subGenres?.length || 0} {genre.subGenres?.length === 1 ? 'subgenre' : 'subgenres'}
+                      {genre.subGenres?.length || 0} {genre.subGenres?.length === 1 ? 'category' : 'categories'}
                     </p>
                   </div>
                   
@@ -368,7 +368,6 @@ function BookGenreFilter({ onBooksUpdate }: BookGenreFilterProps) {
                 {/* Subgenres - Always Visible and Clickable */}
                 {genre.subGenres && genre.subGenres.length > 0 && (
                   <div className="space-y-3">
-                    <h4 className="text-xs font-medium text-gray-600 uppercase tracking-wide">Subgenres</h4>
                     <div className="grid grid-cols-2 gap-2">
                       {genre.subGenres.map((subGenre) => (
                         <button
