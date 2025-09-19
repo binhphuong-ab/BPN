@@ -1,21 +1,80 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { unstable_cache } from 'next/cache';
 import { LibraryService } from '@/lib/library-service';
 import { BookGenreService } from '@/lib/bookgenre-service';
-import { Book, isBookDownloadable, getPrimaryCoverImage, getPrimaryDownload } from '@/models/book';
+import { Book, isBookDownloadable, getPrimaryCoverImage } from '@/models/book';
 import { BookGenre, SubGenre } from '@/models/bookgenre';
 import { ReadingProgress } from '@/components/ReadingProgress';
 import { MarkdownPreview } from '@/components/MDEditor';
 import BookImageGallery from '@/components/BookImageGallery';
 import BookCard from '@/components/BookCard';
+import DownloadSection from '@/components/DownloadSection';
 
 interface BookPageProps {
   params: { slug: string };
 }
 
+// Cached data fetching functions for better performance
+const getCachedBook = unstable_cache(
+  async (slug: string) => LibraryService.getBookBySlug(slug),
+  ['book-by-slug'],
+  { 
+    tags: ['book'],
+    revalidate: 3600 // 1 hour cache
+  }
+);
+
+const getCachedBookGenre = unstable_cache(
+  async (id: string) => BookGenreService.getBookGenreById(id),
+  ['book-genre-by-id'],
+  { 
+    tags: ['book-genre'],
+    revalidate: 7200 // 2 hours cache (genres change less frequently)
+  }
+);
+
+const getCachedSubGenre = unstable_cache(
+  async (id: string) => BookGenreService.getSubGenreById(id),
+  ['sub-genre-by-id'],
+  { 
+    tags: ['sub-genre'],
+    revalidate: 7200 // 2 hours cache
+  }
+);
+
+const getCachedRelatedBooks = unstable_cache(
+  async (count: number) => LibraryService.getRecentBooks(count),
+  ['recent-books'],
+  { 
+    tags: ['books'],
+    revalidate: 1800 // 30 minutes cache
+  }
+);
+
+// Enable Static Generation for popular books (ISR)
+export async function generateStaticParams() {
+  try {
+    // Pre-generate static pages for recent/popular books
+    const recentBooks = await LibraryService.getRecentBooks(20); // Top 20 books
+    
+    return recentBooks
+      .filter(book => book.slug) // Ensure book has slug
+      .map((book) => ({
+        slug: book.slug,
+      }));
+  } catch (error) {
+    console.warn('Error generating static params:', error);
+    return []; // Return empty array if error, will fall back to on-demand generation
+  }
+}
+
+// Enable ISR with 1 hour revalidation
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: BookPageProps): Promise<Metadata> {
-  const book = await LibraryService.getBookBySlug(params.slug);
+  const book = await getCachedBook(params.slug);
 
   if (!book) {
     return {
@@ -23,22 +82,16 @@ export async function generateMetadata({ params }: BookPageProps): Promise<Metad
     };
   }
 
-  // Fetch genre data for SEO keywords
+  // Fetch genre data for SEO keywords in parallel
   let genreNames: string[] = [];
   let subGenreNames: string[] = [];
   
   if (book.genreIds?.length || book.subGenreIds?.length) {
-    const genrePromises = (book.genreIds || []).map(id => 
-      BookGenreService.getBookGenreById(id.toString())
-    );
-    const subGenrePromises = (book.subGenreIds || []).map(id => 
-      BookGenreService.getSubGenreById(id.toString())
-    );
-
     try {
+      // Parallel fetching of genres and subgenres
       const [genres, subGenres] = await Promise.all([
-        Promise.all(genrePromises),
-        Promise.all(subGenrePromises)
+        Promise.all((book.genreIds || []).map(id => getCachedBookGenre(id.toString()))),
+        Promise.all((book.subGenreIds || []).map(id => getCachedSubGenre(id.toString())))
       ]);
       
       genreNames = genres.filter(Boolean).map(g => g!.name);
@@ -72,68 +125,43 @@ export async function generateMetadata({ params }: BookPageProps): Promise<Metad
   };
 }
 
-// Download handler component - Extract to separate client component file later
-function DownloadButton({ book }: { book: Book }) {
-  const primaryDownload = getPrimaryDownload(book);
-  
-  const handleDownload = async () => {
-    try {
-      await fetch(`/api/books/${book._id}/download`, {
-        method: 'POST',
-      });
-      
-      if (primaryDownload?.url) {
-        // Use location.href for better compatibility and avoid popup blockers
-        window.location.href = primaryDownload.url;
-      }
-    } catch (error) {
-      console.error('Error tracking download:', error);
-      if (primaryDownload?.url) {
-        window.location.href = primaryDownload.url;
-      }
-    }
-  };
 
-  return (
-    <button
-      onClick={handleDownload}
-      className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors shadow-sm"
-    >
-      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-      </svg>
-      Download {book.fileFormat || 'File'}
-    </button>
-  );
+// Helper function to serialize book for Client Components
+function serializeBook(book: Book): Book {
+  return JSON.parse(JSON.stringify(book));
 }
 
 export default async function BookPage({ params }: BookPageProps) {
-  const book = await LibraryService.getBookBySlug(params.slug);
+  // Fetch all data in parallel for better performance
+  const [book, relatedBooks] = await Promise.all([
+    getCachedBook(params.slug),
+    getCachedRelatedBooks(4)
+  ]);
 
   if (!book) {
     notFound();
   }
 
   const canDownload = isBookDownloadable(book);
-  const relatedBooks = await LibraryService.getRecentBooks(4);
   const filteredRelatedBooks = relatedBooks.filter(b => b._id?.toString() !== book._id?.toString());
 
-  // Fetch genre and subgenre data
-  const genrePromises = (book.genreIds || []).map(id => 
-    BookGenreService.getBookGenreById(id.toString())
-  );
-  const subGenrePromises = (book.subGenreIds || []).map(id => 
-    BookGenreService.getSubGenreById(id.toString())
-  );
+  // Serialize book for Client Components
+  const serializedBook = serializeBook(book);
 
-  const [genres, subGenres] = await Promise.all([
-    Promise.all(genrePromises),
-    Promise.all(subGenrePromises)
-  ]);
+  // Fetch genre and subgenre data in parallel (only if book has genre/subgenre IDs)
+  let validGenres: BookGenre[] = [];
+  let validSubGenres: SubGenre[] = [];
 
-  // Filter out null results
-  const validGenres = genres.filter(Boolean) as BookGenre[];
-  const validSubGenres = subGenres.filter(Boolean) as SubGenre[];
+  if (book.genreIds?.length || book.subGenreIds?.length) {
+    const [genres, subGenres] = await Promise.all([
+      Promise.all((book.genreIds || []).map(id => getCachedBookGenre(id.toString()))),
+      Promise.all((book.subGenreIds || []).map(id => getCachedSubGenre(id.toString())))
+    ]);
+
+    // Filter out null results
+    validGenres = genres.filter(Boolean) as BookGenre[];
+    validSubGenres = subGenres.filter(Boolean) as SubGenre[];
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -178,7 +206,7 @@ export default async function BookPage({ params }: BookPageProps) {
             <div className="lg:col-span-1 mb-8 lg:mb-0">
               <div className="sticky top-8">
                 {/* Interactive Image Gallery */}
-                <BookImageGallery book={book} />
+                <BookImageGallery book={serializedBook} />
 
                 {/* Quick Info */}
                 <div className="bg-white rounded-xl shadow-sm border p-6 space-y-4">
@@ -213,16 +241,9 @@ export default async function BookPage({ params }: BookPageProps) {
                     )}
                   </div>
 
-                  {/* Download Button */}
+                  {/* Download Section */}
                   {canDownload && (
-                    <div className="pt-4 border-t">
-                      <DownloadButton book={book} />
-                      {book.downloadCount && book.downloadCount > 0 && (
-                        <p className="text-sm text-gray-500 mt-2">
-                          Downloaded {book.downloadCount} times
-                        </p>
-                      )}
-                    </div>
+                    <DownloadSection book={serializedBook} />
                   )}
                 </div>
               </div>
