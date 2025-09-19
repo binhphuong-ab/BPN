@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
 
+// Force dynamic rendering for authentication routes
+export const dynamic = 'force-dynamic';
+
 // Admin credentials (in production, these should be stored securely in environment variables)
 const ADMIN_USERNAME = 'nguyenbinhphuong';
 const ADMIN_PASSWORD = 'Minato123';

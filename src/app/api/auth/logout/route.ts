@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Force dynamic rendering for authentication routes  
+export const dynamic = 'force-dynamic';
+
 export async function POST() {
   try {
     const response = NextResponse.json({ message: 'Logout successful' });

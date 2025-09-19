@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BookGenreService } from '@/lib/bookgenre-service';
 
+// Force dynamic rendering since we use request.url for search params
+export const dynamic = 'force-dynamic';
+
 // GET /api/bookgenres/with-subgenres - Get all genres with their subgenres in a single optimized query
 export async function GET(request: NextRequest) {
   const startTime = Date.now();

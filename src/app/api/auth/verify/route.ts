@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/auth-utils';
 
+// Force dynamic rendering for authentication routes
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   const isValid = await verifyToken(request);
   
