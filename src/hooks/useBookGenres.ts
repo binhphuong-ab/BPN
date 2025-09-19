@@ -244,7 +244,7 @@ export function useBookGenres(): UseBookGenres {
       ErrorHandler.showError('Failed to update book genre');
       throw error;
     }
-  }, [editingBookGenre, selectedBookGenre, closeForms, refreshBookGenres]);
+  }, [editingBookGenre, closeForms, refreshBookGenres]);
 
   const deleteBookGenre = useCallback(async (bookGenre: BookGenreWithCount) => {
     await ErrorHandler.handleAsyncOperation(async () => {
